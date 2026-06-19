@@ -1054,7 +1054,7 @@
         let pendingAttachments = [];
         let isStreaming = false;
         let abortController = null;
-        let streamingTurnIdx = null; // 当前正在流式输出的 turn 索引
+        let streamingTurnIdx = null;
 
         let mode = 'flash';
         let deepThinking = false;
@@ -1161,7 +1161,6 @@
 
         function estimateTokens(text) { if (!text) return 0; return Math.ceil(text.length / 1.8); }
 
-        // 计算整个对话的总 Token
         function updateTokenCounter() {
             const session = getCurrentSession();
             if (!session) { convTokensLabel.textContent = '~0'; return; }
@@ -1629,7 +1628,6 @@
                         });
                         assistantActions.appendChild(regenBtn);
 
-                        // 【继续生成按钮】条件：中断标记 && 未在加载 && 未在流式
                         if (ov.interrupted && !ov._loading && !isStreaming) {
                             const continueBtn = document.createElement('button');
                             continueBtn.className = 'continue-btn';
@@ -1876,7 +1874,6 @@
                 targetTurn.appendChild(assistantWrap);
             }
 
-            // 查找或创建 msg 元素
             let msgDiv = assistantWrap.querySelector('.msg:not(.reasoning-box)');
             if (!msgDiv) {
                 msgDiv = document.createElement('div');
@@ -1885,10 +1882,8 @@
                 assistantWrap.appendChild(msgDiv);
             }
 
-            // 直接设置完整内容（不再追加，因为 fullContent 已累积完整）
             msgDiv.textContent = fullContent || ' ';
 
-            // 处理思考过程
             if (reasoning && reasoning.length > 0) {
                 let reasonBox = assistantWrap.querySelector('.reasoning-box');
                 if (!reasonBox) {
@@ -1917,7 +1912,7 @@
         }
 
         // ============================================================
-        // 执行流式请求（支持追加模式，但更新时传入完整内容）
+        // 执行流式请求（支持追加模式，但不再添加“继续生成”用户消息）
         // ============================================================
         async function performStreamRequest(session, turnIdx, inputVersion, outputVersion, appendMode) {
             const key = localStorage.getItem(KEY_STORAGE);
@@ -1948,10 +1943,10 @@
             // 当前用户消息
             history.push({ role: 'user', content: inputVersion.content });
 
-            // 如果是追加模式，将已生成的内容作为 assistant 消息插入历史，并追加一个“继续”指令
+            // 如果是追加模式，将已生成的内容作为 assistant 消息插入历史（但不添加额外的用户消息）
             if (appendMode && outputVersion.content) {
                 history.push({ role: 'assistant', content: outputVersion.content });
-                history.push({ role: 'user', content: '继续生成' });
+                // 注意：这里不再添加 "继续生成" 用户消息，让模型自然续写
             }
 
             const model = mode === 'flash' ? 'deepseek-v4-flash' : 'deepseek-v4-pro';
@@ -1994,11 +1989,9 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
-                // 完整内容初始值
                 let fullContent = outputVersion.content || '';
                 let reasoningContent = outputVersion.reasoning || '';
 
-                // 如果不是追加模式，清空已有内容
                 if (!appendMode) {
                     fullContent = '';
                     reasoningContent = '';
@@ -2023,7 +2016,6 @@
                                     if (delta.content) {
                                         fullContent += delta.content;
                                         outputVersion.content = fullContent;
-                                        // 传入完整内容
                                         updateStreamingMessage(turnIdx, fullContent, reasoningContent);
                                     }
                                     if (delta.reasoning_content && deepThinking) {
@@ -2062,7 +2054,7 @@
                     outputVersion._loading = false;
                     outputVersion.interrupted = true;
                     saveSessions();
-                    renderChat(); // 重新渲染，显示继续按钮
+                    renderChat();
                     statusShort.textContent = '⏹ 已停止 (可继续生成)';
                     setTimeout(() => { if (statusShort.textContent === '⏹ 已停止 (可继续生成)') statusShort.textContent = '就绪'; updateConvStatus(); }, 3000);
                 } else {

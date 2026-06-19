@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My DeepSeek</title>
     <style>
-        /* ========== 基础变量（深色默认） ========== */
+        /* ========== 基础变量 ========== */
         :root {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
@@ -29,7 +29,6 @@
             --highlight-bg: #1f2937;
             --icon-color: var(--text-muted);
         }
-        /* ========== 浅色模式 ========== */
         body.light {
             --bg-main: #f6f8fa;
             --bg-surface: #ffffff;
@@ -59,7 +58,6 @@
             transition: background 0.3s, color 0.3s;
         }
 
-        /* ========== 通用图标样式 ========== */
         .icon-svg {
             width: 20px;
             height: 20px;
@@ -82,18 +80,8 @@
             border-bottom: 1px solid var(--border-light);
             flex-shrink: 0;
             gap: 12px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
         }
-        #menuBtn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        #menuBtn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
         #menuBtn .icon-svg { stroke: var(--text-secondary); }
         #titleArea {
             flex: 1;
@@ -106,23 +94,8 @@
             text-overflow: ellipsis;
             color: var(--text-primary);
         }
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-        .topbar-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .topbar-btn { background: none; border: none; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: all var(--transition); display: flex; align-items: center; justify-content: center; }
         .topbar-btn:hover { background: var(--bg-input); }
         .topbar-btn .icon-svg { stroke: var(--text-muted); }
         .topbar-btn:hover .icon-svg { stroke: var(--text-primary); }
@@ -155,15 +128,8 @@
             flex-shrink: 0;
             flex-wrap: wrap;
         }
-        #convStatusBar .status-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        #convStatusBar .status-item .value {
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
+        #convStatusBar .status-item { display: flex; align-items: center; gap: 6px; }
+        #convStatusBar .status-item .value { font-weight: 500; color: var(--text-secondary); }
         #convStatusBar .status-item .value.model { color: var(--accent-blue); }
 
         /* ========== 目录面板 ========== */
@@ -176,61 +142,17 @@
             padding: 0 16px;
             flex-shrink: 0;
         }
-        #tocPanel.open {
-            max-height: 200px;
-            padding: 8px 16px;
-            overflow-y: auto;
-        }
-        #tocPanel .toc-item {
-            padding: 6px 0;
-            font-size: 13px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            border-bottom: 1px dashed var(--border-light);
-            transition: color var(--transition);
-        }
+        #tocPanel.open { max-height: 200px; padding: 8px 16px; overflow-y: auto; }
+        #tocPanel .toc-item { padding: 6px 0; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px dashed var(--border-light); transition: color var(--transition); }
         #tocPanel .toc-item:last-child { border-bottom: none; }
         #tocPanel .toc-item:hover { color: var(--accent-blue); }
-        #tocPanel .toc-item .toc-index {
-            color: var(--text-muted);
-            margin-right: 8px;
-            font-weight: 500;
-        }
+        #tocPanel .toc-item .toc-index { color: var(--text-muted); margin-right: 8px; font-weight: 500; }
 
         /* ========== 附件条 ========== */
-        #attachmentBar {
-            display: none;
-            gap: 6px;
-            padding: 4px 16px;
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-light);
-            flex-shrink: 0;
-            flex-wrap: wrap;
-        }
+        #attachmentBar { display: none; gap: 6px; padding: 4px 16px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); flex-shrink: 0; flex-wrap: wrap; }
         #attachmentBar.show { display: flex; }
-        .attach-tag {
-            background: var(--bg-input);
-            border-radius: 30px;
-            padding: 2px 12px 2px 16px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid var(--border-light);
-            color: var(--text-secondary);
-        }
-        .attach-tag .remove-attach {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 0 2px;
-            transition: color 0.2s;
-        }
+        .attach-tag { background: var(--bg-input); border-radius: 30px; padding: 2px 12px 2px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-light); color: var(--text-secondary); }
+        .attach-tag .remove-attach { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 0 2px; transition: color 0.2s; }
         .attach-tag .remove-attach:active { color: var(--accent-red); }
 
         /* ========== 聊天区域 ========== */
@@ -243,12 +165,7 @@
             gap: 12px;
             background: var(--bg-main);
         }
-        .msg-wrapper {
-            display: flex;
-            flex-direction: column;
-            max-width: 88%;
-            animation: fadeIn 0.25s ease;
-        }
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 88%; animation: fadeIn 0.25s ease; }
         .msg-wrapper.user { align-self: flex-end; align-items: flex-end; }
         .msg-wrapper.assistant { align-self: flex-start; align-items: flex-start; width: 100%; }
         .msg {
@@ -261,100 +178,25 @@
             width: 100%;
             box-shadow: var(--shadow-soft);
         }
-        .user .msg {
-            background: var(--bg-msg-user);
-            color: var(--text-primary);
-            border-bottom-right-radius: 4px;
-        }
-        .assistant .msg {
-            background: var(--bg-msg-ai);
-            color: var(--text-secondary);
-            border-bottom-left-radius: 4px;
-        }
-        .msg img {
-            max-width: 100%;
-            border-radius: var(--radius-sm);
-            margin-top: 4px;
-            max-height: 200px;
-        }
-        .cursor-blink::after {
-            content: '▊';
-            animation: blink 0.9s step-end infinite;
-            color: var(--accent-blue);
-            margin-left: 2px;
-        }
+        .user .msg { background: var(--bg-msg-user); color: var(--text-primary); border-bottom-right-radius: 4px; }
+        .assistant .msg { background: var(--bg-msg-ai); color: var(--text-secondary); border-bottom-left-radius: 4px; }
+        .msg img { max-width: 100%; border-radius: var(--radius-sm); margin-top: 4px; max-height: 200px; }
+        .msg .error-detail { font-size: 13px; color: #f87171; background: rgba(239,68,68,0.15); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 6px; border-left: 3px solid var(--accent-red); white-space: pre-wrap; word-break: break-all; }
+        .cursor-blink::after { content: '▊'; animation: blink 0.9s step-end infinite; color: var(--accent-blue); margin-left: 2px; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
-        .msg-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 4px;
-            font-size: 12px;
-            opacity: 0.7;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .msg-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 12px;
-            transition: background var(--transition);
-        }
+        .msg-actions { display: flex; gap: 8px; margin-top: 4px; font-size: 12px; opacity: 0.7; flex-wrap: wrap; align-items: center; }
+        .msg-actions button { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 8px; border-radius: 20px; font-size: 12px; transition: background var(--transition); }
         .msg-actions button:hover { background: var(--bg-input); color: var(--text-primary); }
         .msg-actions .fav-btn { font-size: 14px; padding: 2px 6px; }
         .msg-actions .fav-btn.favorited { color: #f59e0b; }
-        .version-control {
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            background: var(--bg-input);
-            border-radius: 20px;
-            padding: 0 6px;
-            border: 1px solid var(--border-light);
-        }
-        .version-control button {
-            background: none;
-            border: none;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 0 4px;
-            color: var(--text-muted);
-        }
+        .version-control { display: inline-flex; align-items: center; gap: 2px; background: var(--bg-input); border-radius: 20px; padding: 0 6px; border: 1px solid var(--border-light); }
+        .version-control button { background: none; border: none; font-size: 14px; cursor: pointer; padding: 0 4px; color: var(--text-muted); }
         .version-control button:hover { color: var(--text-primary); }
-        .version-control span {
-            font-size: 12px;
-            color: var(--text-muted);
-            min-width: 28px;
-            text-align: center;
-        }
-        .reasoning-box {
-            width: 100%;
-            background: var(--bg-input);
-            border-radius: var(--radius-sm);
-            padding: 8px 14px;
-            margin-bottom: 4px;
-            border-left: 3px solid var(--accent-blue);
-            font-size: calc(var(--font-size-msg) - 2px);
-            color: var(--text-muted);
-        }
-        .reasoning-box summary {
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-secondary);
-            padding: 2px 0;
-        }
+        .version-control span { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: center; }
+        .reasoning-box { width: 100%; background: var(--bg-input); border-radius: var(--radius-sm); padding: 8px 14px; margin-bottom: 4px; border-left: 3px solid var(--accent-blue); font-size: calc(var(--font-size-msg) - 2px); color: var(--text-muted); }
+        .reasoning-box summary { cursor: pointer; font-weight: 500; color: var(--text-secondary); padding: 2px 0; }
         .reasoning-box summary:hover { opacity: 0.8; }
-        .reasoning-content {
-            white-space: pre-wrap;
-            margin-top: 4px;
-            padding-top: 4px;
-            border-top: 1px dashed var(--border-light);
-            max-height: 150px;
-            overflow-y: auto;
-        }
+        .reasoning-content { white-space: pre-wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-light); max-height: 150px; overflow-y: auto; }
 
         /* ========== 输入区域 ========== */
         #inputArea {
@@ -366,27 +208,10 @@
             flex-direction: column;
             gap: 6px;
         }
-        #inputTopRow {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 4px;
-        }
-        #inputTopLeft {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #inputTopLeft label {
-            font-size: 13px;
-            color: var(--text-muted);
-            cursor: pointer;
-            user-select: none;
-        }
-        #inputTopLeft .chars-label {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
+        #inputTopRow { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+        #inputTopLeft { display: flex; align-items: center; gap: 8px; }
+        #inputTopLeft label { font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none; }
+        #inputTopLeft .chars-label { font-size: 12px; color: var(--text-muted); }
         .switch {
             position: relative;
             width: 44px;
@@ -398,9 +223,7 @@
             transition: background var(--transition);
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
-        .switch.active {
-            background: var(--accent-blue);
-        }
+        .switch.active { background: var(--accent-blue); }
         .switch .slider {
             position: absolute;
             top: 2px;
@@ -412,56 +235,17 @@
             transition: transform var(--transition);
             box-shadow: 0 1px 4px rgba(0,0,0,0.15);
         }
-        .switch.active .slider {
-            transform: translateX(20px);
-        }
-        #inputTopRight {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #inputTopRight .status-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        #inputTopRight .status-item .value {
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        #inputTopRight #tocBtn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .switch.active .slider { transform: translateX(20px); }
+        #inputTopRight { display: flex; align-items: center; gap: 8px; }
+        #inputTopRight .status-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); }
+        #inputTopRight .status-item .value { font-weight: 500; color: var(--text-secondary); }
+        #inputTopRight #tocBtn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: var(--radius-sm); transition: all var(--transition); display: flex; align-items: center; justify-content: center; }
         #inputTopRight #tocBtn .icon-svg { stroke: var(--text-muted); }
         #inputTopRight #tocBtn:hover { background: var(--bg-input); }
         #inputTopRight #tocBtn.active .icon-svg { stroke: var(--accent-blue); }
 
-        #inputRow {
-            display: flex;
-            gap: 8px;
-            align-items: flex-end;
-        }
-        #attachBtn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        #inputRow { display: flex; gap: 8px; align-items: flex-end; }
+        #attachBtn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: var(--radius-sm); transition: all var(--transition); display: flex; align-items: center; justify-content: center; }
         #attachBtn .icon-svg { stroke: var(--text-muted); }
         #attachBtn:hover { background: var(--bg-input); }
         #attachBtn:hover .icon-svg { stroke: var(--text-primary); }
@@ -550,10 +334,7 @@
             color: var(--text-primary);
             animation: slideUp 0.3s ease;
         }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         #settingsPanel .panel-header {
             display: flex;
             justify-content: center;
@@ -561,13 +342,7 @@
             position: relative;
             margin-bottom: 20px;
         }
-        #settingsPanel .panel-header h2 {
-            font-size: 20px;
-            font-weight: 600;
-            text-align: center;
-            margin: 0;
-            color: var(--text-primary);
-        }
+        #settingsPanel .panel-header h2 { font-size: 20px; font-weight: 600; text-align: center; margin: 0; color: var(--text-primary); }
         #settingsPanel .panel-header .close-btn {
             position: absolute;
             right: 0;
@@ -583,33 +358,12 @@
         }
         #settingsPanel .panel-header .close-btn:hover { color: var(--text-primary); }
 
-        .setting-group {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .setting-item {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .setting-item .setting-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        .setting-item .setting-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-        }
+        .setting-group { display: flex; flex-direction: column; gap: 20px; }
+        .setting-item { display: flex; flex-direction: column; gap: 6px; }
+        .setting-item .setting-label { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+        .setting-item .setting-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 2px; }
 
-        /* 卡片选择 */
-        .options-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+        .options-row { display: flex; gap: 12px; flex-wrap: wrap; }
         .option-card {
             flex: 1;
             min-width: 80px;
@@ -634,22 +388,11 @@
             vertical-align: middle;
             transition: all var(--transition);
         }
-        .option-card.selected {
-            border-color: var(--accent-blue);
-            background: var(--bg-surface);
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-        }
-        .option-card.selected .dot {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-        }
+        .option-card.selected { border-color: var(--accent-blue); background: var(--bg-surface); box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+        .option-card.selected .dot { background: var(--accent-blue); border-color: var(--accent-blue); }
         .option-card .label-text { vertical-align: middle; }
         .option-card:active { transform: scale(0.97); }
-        .confirm-row {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 4px;
-        }
+        .confirm-row { display: flex; justify-content: flex-end; margin-top: 4px; }
         .confirm-row button {
             padding: 6px 20px;
             border: none;
@@ -663,11 +406,7 @@
         .confirm-row button:hover { background: var(--accent-blue-hover); }
         .confirm-row button:disabled { opacity: 0.4; pointer-events: none; }
 
-        /* 字号卡片 */
-        .font-size-options {
-            display: flex;
-            gap: 10px;
-        }
+        .font-size-options { display: flex; gap: 10px; }
         .font-card {
             flex: 1;
             padding: 10px 0;
@@ -681,25 +420,11 @@
             background: var(--bg-input);
             font-weight: 500;
         }
-        .font-card.selected {
-            border-color: var(--accent-blue);
-            background: var(--bg-surface);
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-            color: var(--text-primary);
-        }
+        .font-card.selected { border-color: var(--accent-blue); background: var(--bg-surface); box-shadow: 0 0 0 2px rgba(59,130,246,0.2); color: var(--text-primary); }
         .font-card:hover { background: var(--bg-input); transform: scale(1.02); }
 
-        /* 美化开关（iOS风格） */
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 0;
-        }
-        .toggle-row .toggle-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+        .toggle-row .toggle-label { font-size: 14px; color: var(--text-secondary); }
         .toggle-switch {
             position: relative;
             width: 48px;
@@ -711,9 +436,7 @@
             transition: background var(--transition);
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
-        .toggle-switch.active {
-            background: var(--accent-blue);
-        }
+        .toggle-switch.active { background: var(--accent-blue); }
         .toggle-switch .toggle-slider {
             position: absolute;
             top: 3px;
@@ -725,16 +448,9 @@
             transition: transform var(--transition);
             box-shadow: 0 1px 4px rgba(0,0,0,0.15);
         }
-        .toggle-switch.active .toggle-slider {
-            transform: translateX(20px);
-        }
+        .toggle-switch.active .toggle-slider { transform: translateX(20px); }
 
-        /* 显示选项（三个小卡片） */
-        .display-options {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .display-options { display: flex; gap: 10px; flex-wrap: wrap; }
         .display-options .disp-card {
             flex: 1;
             min-width: 60px;
@@ -748,21 +464,10 @@
             transition: all var(--transition);
             background: var(--bg-input);
         }
-        .display-options .disp-card.active {
-            border-color: var(--accent-blue);
-            background: var(--bg-surface);
-            color: var(--text-primary);
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
-        }
+        .display-options .disp-card.active { border-color: var(--accent-blue); background: var(--bg-surface); color: var(--text-primary); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
         .display-options .disp-card:hover { background: var(--bg-input); transform: scale(1.02); }
 
-        /* API Key 行（无粘贴按钮） */
-        .api-key-row {
-            display: flex;
-            gap: 6px;
-            width: 100%;
-            flex-wrap: wrap;
-        }
+        .api-key-row { display: flex; gap: 6px; width: 100%; flex-wrap: wrap; }
         .api-key-row input {
             flex: 1;
             min-width: 100px;
@@ -788,18 +493,10 @@
             white-space: nowrap;
         }
         .api-key-row .action-btn:hover { background: var(--accent-blue-hover); }
-        .api-key-row .action-btn.secondary {
-            background: var(--bg-input);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-light);
-        }
+        .api-key-row .action-btn.secondary { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-light); }
         .api-key-row .action-btn.secondary:hover { background: var(--border-light); }
 
-        /* 备份恢复按钮组 */
-        .backup-row {
-            display: flex;
-            gap: 10px;
-        }
+        .backup-row { display: flex; gap: 10px; }
         .backup-row .big-btn {
             flex: 1;
             padding: 12px 0;
@@ -811,38 +508,15 @@
             transition: all var(--transition);
             text-align: center;
         }
-        .backup-row .big-btn.primary {
-            background: var(--accent-blue);
-            color: white;
-        }
+        .backup-row .big-btn.primary { background: var(--accent-blue); color: white; }
         .backup-row .big-btn.primary:hover { background: var(--accent-blue-hover); }
-        .backup-row .big-btn.secondary {
-            background: var(--bg-input);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-light);
-        }
+        .backup-row .big-btn.secondary { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-light); }
         .backup-row .big-btn.secondary:hover { background: var(--border-light); }
-        .backup-row .file-input-wrapper {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-        .backup-row .file-input-wrapper input[type="file"] {
-            position: absolute;
-            left: 0; top: 0;
-            opacity: 0;
-            width: 100%; height: 100%;
-            cursor: pointer;
-        }
-        .backup-row .file-input-wrapper .big-btn {
-            width: 100%;
-        }
+        .backup-row .file-input-wrapper { flex: 1; position: relative; overflow: hidden; }
+        .backup-row .file-input-wrapper input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .backup-row .file-input-wrapper .big-btn { width: 100%; }
 
-        .divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: 4px 0;
-        }
+        .divider { height: 1px; background: var(--border-light); margin: 4px 0; }
 
         /* ========== 抽屉 ========== */
         #overlay {
@@ -882,24 +556,10 @@
             flex-shrink: 0;
         }
         #drawerTitle .icon-svg { stroke: var(--text-muted); }
-        #drawerTitle button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        #drawerTitle button { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
         #drawerTitle button .icon-svg { stroke: var(--text-muted); }
         #drawerTitle button:hover .icon-svg { stroke: var(--text-primary); }
-        #drawerActions {
-            display: flex;
-            gap: 8px;
-            margin: 12px 0;
-            flex-shrink: 0;
-            flex-wrap: wrap;
-        }
+        #drawerActions { display: flex; gap: 8px; margin: 12px 0; flex-shrink: 0; flex-wrap: wrap; }
         #drawerActions button {
             flex: 1;
             padding: 8px 0;
@@ -913,18 +573,8 @@
             transition: all var(--transition);
         }
         #drawerActions button:hover { background: var(--border-light); }
-        #sessionListContainer {
-            flex: 1;
-            overflow-y: auto;
-            margin-top: 4px;
-            padding-bottom: 8px;
-        }
-        .drawer-section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin: 10px 0 4px 8px;
-        }
+        #sessionListContainer { flex: 1; overflow-y: auto; margin-top: 4px; padding-bottom: 8px; }
+        .drawer-section-title { font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 10px 0 4px 8px; }
         .folder-item, .session-item {
             display: flex;
             align-items: center;
@@ -938,49 +588,17 @@
         }
         .folder-item:hover, .session-item:hover { background: var(--bg-input); }
         .folder-item.drag-over { background: var(--accent-blue); opacity: 0.6; }
-        .folder-item.active, .session-item.active {
-            background: var(--accent-blue);
-            color: white;
-        }
+        .folder-item.active, .session-item.active { background: var(--accent-blue); color: white; }
         .folder-item.active .session-name, .session-item.active .session-name { color: white; }
         .folder-item .folder-icon { font-size: 16px; margin-right: 2px; }
-        .session-name {
-            flex: 1;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 500;
-        }
-        .item-actions {
-            display: flex;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-        .item-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 2px;
-            border-radius: 4px;
-            transition: background var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .session-name { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .item-actions button { background: none; border: none; cursor: pointer; padding: 2px; border-radius: 4px; transition: background var(--transition); display: flex; align-items: center; justify-content: center; }
         .item-actions button .icon-svg { stroke: var(--text-muted); width: 16px; height: 16px; }
         .item-actions button:hover { background: var(--bg-input); }
         .item-actions button:hover .icon-svg { stroke: var(--text-primary); }
-        .folder-children {
-            padding-left: 20px;
-            border-left: 2px solid var(--border-light);
-            margin-left: 6px;
-        }
-        .pinned-badge {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-left: 4px;
-        }
+        .folder-children { padding-left: 20px; border-left: 2px solid var(--border-light); margin-left: 6px; }
+        .pinned-badge { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
 
         #drawerFooter {
             flex-shrink: 0;
@@ -991,10 +609,7 @@
             border-top: 1px solid var(--border-light);
             padding-top: 10px;
         }
-        #drawerFooter .footer-row {
-            display: flex;
-            gap: 6px;
-        }
+        #drawerFooter .footer-row { display: flex; gap: 6px; }
         #drawerFooter .footer-row button {
             flex: 1;
             padding: 8px 0;
@@ -1024,21 +639,8 @@
             gap: 12px;
             flex-wrap: wrap;
         }
-        #storageInfo .bar-bg {
-            width: 60px;
-            height: 6px;
-            background: var(--bg-input);
-            border-radius: 10px;
-            overflow: hidden;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        #storageInfo .bar-fill {
-            height: 100%;
-            background: var(--accent-blue);
-            border-radius: 10px;
-            transition: width 0.3s;
-        }
+        #storageInfo .bar-bg { width: 60px; height: 6px; background: var(--bg-input); border-radius: 10px; overflow: hidden; display: inline-block; vertical-align: middle; }
+        #storageInfo .bar-fill { height: 100%; background: var(--accent-blue); border-radius: 10px; transition: width 0.3s; }
 
         /* ========== 收藏模态框 ========== */
         #favoriteModal {
@@ -1065,30 +667,11 @@
             color: var(--text-primary);
             animation: slideUp 0.3s ease;
         }
-        #favoritePanel .fav-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        #favoritePanel .fav-header h2 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-        #favoritePanel .fav-header button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-            color: var(--text-muted);
-            transition: color var(--transition);
-        }
+        #favoritePanel .fav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        #favoritePanel .fav-header h2 { font-size: 18px; font-weight: 600; }
+        #favoritePanel .fav-header button { background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text-muted); transition: color var(--transition); }
         #favoritePanel .fav-header button:hover { color: var(--text-primary); }
-        #favoriteList {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        #favoriteList { display: flex; flex-direction: column; gap: 6px; }
         #favoriteList .fav-item {
             padding: 10px 14px;
             border-radius: var(--radius-sm);
@@ -1098,37 +681,12 @@
             border-left: 3px solid #f59e0b;
         }
         #favoriteList .fav-item:hover { background: var(--border-light); }
-        #favoriteList .fav-item .fav-summary {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        #favoriteList .fav-item .fav-meta {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #favoriteList .fav-item .fav-meta .fav-role {
-            font-weight: 500;
-        }
-        #favoriteList .fav-item .fav-meta .fav-remove {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0 4px;
-            transition: color var(--transition);
-        }
+        #favoriteList .fav-item .fav-summary { font-size: 14px; color: var(--text-secondary); }
+        #favoriteList .fav-item .fav-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; justify-content: space-between; align-items: center; }
+        #favoriteList .fav-item .fav-meta .fav-role { font-weight: 500; }
+        #favoriteList .fav-item .fav-meta .fav-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0 4px; transition: color var(--transition); }
         #favoriteList .fav-item .fav-meta .fav-remove:hover { color: var(--accent-red); }
-        .fav-empty {
-            color: var(--text-muted);
-            text-align: center;
-            padding: 30px 0;
-            font-size: 14px;
-        }
+        .fav-empty { color: var(--text-muted); text-align: center; padding: 30px 0; font-size: 14px; }
 
         /* ========== 搜索模态框 ========== */
         #searchModal {
@@ -1142,20 +700,8 @@
             color: var(--text-primary);
         }
         #searchModal.active { display: flex; }
-        #searchModal .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        #searchModal .header button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-            color: var(--text-muted);
-            transition: color var(--transition);
-        }
+        #searchModal .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        #searchModal .header button { background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text-muted); transition: color var(--transition); }
         #searchModal .header button:hover { color: var(--text-primary); }
         #searchInput {
             width: 100%;
@@ -1168,23 +714,12 @@
             color: var(--text-primary);
             margin-bottom: 12px;
         }
-        #searchResults {
-            flex: 1;
-            overflow-y: auto;
-        }
-        .search-result-item {
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-light);
-            cursor: pointer;
-        }
+        #searchResults { flex: 1; overflow-y: auto; }
+        .search-result-item { padding: 12px 0; border-bottom: 1px solid var(--border-light); cursor: pointer; }
         .search-result-item:hover { background: var(--bg-input); }
         .search-result-item .snippet { font-size: 14px; }
         .search-result-item .snippet mark { background: #fbbf24; color: #1e293b; }
-        .search-result-item .meta {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
+        .search-result-item .meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
         /* ========== 导出模态框 ========== */
         #exportModal {
@@ -1218,16 +753,8 @@
             transition: background var(--transition);
         }
         .export-options button:hover { background: var(--border-light); }
-        #closeExportBtn {
-            margin-top: 12px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 13px;
-            cursor: pointer;
-        }
+        #closeExportBtn { margin-top: 12px; background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; }
 
-        /* ========== 通用动画 ========== */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 480px) {
             .msg-wrapper { max-width: 96%; }
@@ -1267,18 +794,9 @@
 
     <!-- 对话状态栏 -->
     <div id="convStatusBar">
-        <span class="status-item">
-            <span>模式</span>
-            <span class="value model" id="convModelLabel">快速</span>
-        </span>
-        <span class="status-item">
-            <span>Token</span>
-            <span class="value" id="convTokensLabel">~0</span>
-        </span>
-        <span class="status-item">
-            <span>状态</span>
-            <span class="value" id="convStatusLabel">就绪</span>
-        </span>
+        <span class="status-item"><span>模式</span><span class="value model" id="convModelLabel">快速</span></span>
+        <span class="status-item"><span>Token</span><span class="value" id="convTokensLabel">~0</span></span>
+        <span class="status-item"><span>状态</span><span class="value" id="convStatusLabel">就绪</span></span>
     </div>
 
     <!-- 目录面板 -->
@@ -1295,15 +813,11 @@
         <div id="inputTopRow">
             <div id="inputTopLeft">
                 <label for="deepSwitch">深度思考</label>
-                <div id="deepSwitch" class="switch">
-                    <div class="slider"></div>
-                </div>
+                <div id="deepSwitch" class="switch"><div class="slider"></div></div>
                 <span class="chars-label" id="statusChars">0 字符</span>
             </div>
             <div id="inputTopRight">
-                <span class="status-item">
-                    <span class="value" id="inputStatusShort">就绪</span>
-                </span>
+                <span class="status-item"><span class="value" id="inputStatusShort">就绪</span></span>
                 <button id="tocBtn" aria-label="目录">
                     <svg class="icon-svg" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 </button>
@@ -1325,65 +839,35 @@
     </div>
 
     <!-- 底部状态栏 -->
-    <div id="statusBar">
-        <span id="statusText"></span>
-    </div>
+    <div id="statusBar"><span id="statusText"></span></div>
 
     <!-- ====== 设置浮层面板 ====== -->
     <div id="settingsOverlay">
         <div id="settingsPanel">
-            <div class="panel-header">
-                <h2>设置</h2>
-                <button class="close-btn" id="closeSettingsBtn">✕</button>
-            </div>
+            <div class="panel-header"><h2>设置</h2><button class="close-btn" id="closeSettingsBtn">✕</button></div>
             <div class="setting-group">
-
-                <!-- 深色模式 -->
                 <div class="setting-item">
                     <div class="setting-label">深色模式</div>
-                    <div class="toggle-row">
-                        <span class="toggle-label" id="darkLabel">关闭</span>
-                        <div class="toggle-switch" id="settingsDarkToggle">
-                            <div class="toggle-slider"></div>
-                        </div>
-                    </div>
+                    <div class="toggle-row"><span class="toggle-label" id="darkLabel">关闭</span><div class="toggle-switch" id="settingsDarkToggle"><div class="toggle-slider"></div></div></div>
                 </div>
-
-                <!-- 模型模式 -->
                 <div class="setting-item">
                     <div class="setting-label">模型模式</div>
                     <div class="setting-desc">快速模式响应更快，专家模式推理更深。</div>
                     <div class="options-row" id="modeOptions">
-                        <div class="option-card" data-value="flash">
-                            <span class="dot"></span><span class="label-text">快速</span>
-                        </div>
-                        <div class="option-card" data-value="pro">
-                            <span class="dot"></span><span class="label-text">专家</span>
-                        </div>
+                        <div class="option-card" data-value="flash"><span class="dot"></span><span class="label-text">快速</span></div>
+                        <div class="option-card" data-value="pro"><span class="dot"></span><span class="label-text">专家</span></div>
                     </div>
-                    <div class="confirm-row">
-                        <button id="settingsModeConfirm" disabled>确认</button>
-                    </div>
+                    <div class="confirm-row"><button id="settingsModeConfirm" disabled>确认</button></div>
                 </div>
-
-                <!-- 记忆摘要 -->
                 <div class="setting-item">
                     <div class="setting-label">记忆摘要</div>
                     <div class="setting-desc">选择发送给 AI 的历史范围，滑动窗口节省 Token。</div>
                     <div class="options-row" id="memoryOptions">
-                        <div class="option-card" data-value="full">
-                            <span class="dot"></span><span class="label-text">全量</span>
-                        </div>
-                        <div class="option-card" data-value="window">
-                            <span class="dot"></span><span class="label-text">最近20条</span>
-                        </div>
+                        <div class="option-card" data-value="full"><span class="dot"></span><span class="label-text">全量</span></div>
+                        <div class="option-card" data-value="window"><span class="dot"></span><span class="label-text">最近20条</span></div>
                     </div>
-                    <div class="confirm-row">
-                        <button id="settingsMemoryConfirm" disabled>确认</button>
-                    </div>
+                    <div class="confirm-row"><button id="settingsMemoryConfirm" disabled>确认</button></div>
                 </div>
-
-                <!-- API Key -->
                 <div class="setting-item">
                     <div class="setting-label">API Key</div>
                     <div class="api-key-row">
@@ -1392,8 +876,6 @@
                         <button id="settingsApiClear" class="action-btn secondary">修改</button>
                     </div>
                 </div>
-
-                <!-- 字号（卡片式） -->
                 <div class="setting-item">
                     <div class="setting-label">字号</div>
                     <div class="font-size-options" id="fontSizeOptions">
@@ -1403,8 +885,6 @@
                         <div class="font-card" data-size="21">特大</div>
                     </div>
                 </div>
-
-                <!-- 显示选项 -->
                 <div class="setting-item">
                     <div class="setting-label">显示选项</div>
                     <div class="display-options">
@@ -1413,95 +893,53 @@
                         <div class="disp-card active" data-key="tokens" id="dispTokens">Token数</div>
                     </div>
                 </div>
-
                 <div class="divider"></div>
-
-                <!-- 备份/恢复 -->
                 <div class="setting-item">
                     <div class="setting-label">数据管理</div>
                     <div class="backup-row">
                         <button class="big-btn primary" id="settingsBackupBtn">💾 备份</button>
-                        <div class="file-input-wrapper">
-                            <button class="big-btn secondary">📂 恢复</button>
-                            <input type="file" id="settingsBackupFileInput" accept=".json">
-                        </div>
+                        <div class="file-input-wrapper"><button class="big-btn secondary">📂 恢复</button><input type="file" id="settingsBackupFileInput" accept=".json"></div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
     <!-- ====== 收藏模态框 ====== -->
     <div id="favoriteModal">
-        <div id="favoritePanel">
-            <div class="fav-header">
-                <h2>❤️ 收藏的消息</h2>
-                <button id="closeFavoriteBtn">✕</button>
-            </div>
-            <div id="favoriteList"></div>
-        </div>
+        <div id="favoritePanel"><div class="fav-header"><h2>❤️ 收藏的消息</h2><button id="closeFavoriteBtn">✕</button></div><div id="favoriteList"></div></div>
     </div>
 
     <!-- ====== 搜索模态框 ====== -->
     <div id="searchModal">
-        <div class="header">
-            <span style="font-weight:600;">搜索</span>
-            <button id="closeSearchBtn">✕</button>
-        </div>
+        <div class="header"><span style="font-weight:600;">搜索</span><button id="closeSearchBtn">✕</button></div>
         <input type="text" id="searchInput" placeholder="搜索所有对话...">
         <div id="searchResults"></div>
     </div>
 
     <!-- ====== 导出模态框 ====== -->
     <div id="exportModal">
-        <div id="exportBox">
-            <h3>导出当前对话</h3>
-            <div class="export-options">
-                <button id="exportAI">仅导出 AI 回复</button>
-                <button id="exportUser">仅导出我的提问</button>
-                <button id="exportAll">导出全部</button>
-            </div>
-            <button id="closeExportBtn">取消</button>
-        </div>
+        <div id="exportBox"><h3>导出当前对话</h3><div class="export-options"><button id="exportAI">仅导出 AI 回复</button><button id="exportUser">仅导出我的提问</button><button id="exportAll">导出全部</button></div><button id="closeExportBtn">取消</button></div>
     </div>
 
     <!-- ====== 遮罩 & 抽屉 ====== -->
     <div id="overlay"></div>
     <div id="drawer">
-        <div id="drawerTitle">
-            <span>对话</span>
-            <button id="closeDrawerBtn" aria-label="关闭">
-                <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <div id="drawerActions">
-            <button id="newSessionBtn">+ 新对话</button>
-            <button id="newFolderBtn">📁 新建文件夹</button>
-        </div>
+        <div id="drawerTitle"><span>对话</span><button id="closeDrawerBtn" aria-label="关闭"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+        <div id="drawerActions"><button id="newSessionBtn">+ 新对话</button><button id="newFolderBtn">📁 新建文件夹</button></div>
         <div id="sessionListContainer"></div>
         <div id="drawerFooter">
-            <div id="storageInfo">
-                <span id="storageText">本地存储: 0 KB</span>
-                <span class="bar-bg"><span class="bar-fill" id="storageBar" style="width:0%"></span></span>
-                <span id="storagePercent">0%</span>
-            </div>
+            <div id="storageInfo"><span id="storageText">本地存储: 0 KB</span><span class="bar-bg"><span class="bar-fill" id="storageBar" style="width:0%"></span></span><span id="storagePercent">0%</span></div>
             <div class="footer-row">
-                <button id="favoriteBtn" class="favorite-btn">
-                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2.75l2.86 5.79 6.39.93-4.62 4.5 1.09 6.36L12 17.32 6.28 20.33l1.09-6.36-4.62-4.5 6.39-.93L12 2.75z"/></svg>
-                    收藏
-                </button>
-                <button id="settingsBtn">
-                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    设置
-                </button>
+                <button id="favoriteBtn" class="favorite-btn"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2.75l2.86 5.79 6.39.93-4.62 4.5 1.09 6.36L12 17.32 6.28 20.33l1.09-6.36-4.62-4.5 6.39-.93L12 2.75z"/></svg> 收藏</button>
+                <button id="settingsBtn"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设置</button>
             </div>
         </div>
     </div>
 
     <script>
         // ============================================================
-        //  数据层（全部保留原有功能）
+        //  数据层
         // ============================================================
         let sessions = [];
         let folders = [];
@@ -1601,7 +1039,7 @@
         const fontSizeOptions = document.getElementById('fontSizeOptions');
 
         // ============================================================
-        //  工具函数（全部保留）
+        //  工具函数
         // ============================================================
         function generateId() { return Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
 
@@ -1663,7 +1101,7 @@
         }
 
         // ============================================================
-        //  收藏功能（全部保留）
+        //  收藏功能
         // ============================================================
         function toggleFavoriteMsg(sessionId, msgIndex) {
             const session = sessions.find(s => s.id === sessionId);
@@ -1774,7 +1212,7 @@
         favoriteModal.addEventListener('click', (e) => { if (e.target === favoriteModal) closeFavoriteModal(); });
 
         // ============================================================
-        //  加载数据（修复日间模式）
+        //  加载数据
         // ============================================================
         function loadData() {
             const savedKey = localStorage.getItem(KEY_STORAGE);
@@ -1943,7 +1381,7 @@
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
-        //  渲染聊天（全部保留）
+        //  渲染聊天（增强错误显示）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1993,6 +1431,13 @@
                     } else {
                         msgDiv.textContent = msg.content || '(空消息)';
                     }
+                    // 如果是错误消息，显示详细错误
+                    if (msg.isError && msg.errorDetail) {
+                        const detailDiv = document.createElement('div');
+                        detailDiv.className = 'error-detail';
+                        detailDiv.textContent = msg.errorDetail;
+                        msgDiv.appendChild(detailDiv);
+                    }
                     wrap.appendChild(msgDiv);
 
                     const actions = document.createElement('div');
@@ -2010,14 +1455,14 @@
                         actions.appendChild(editBtn);
                     }
 
-                    if (msg.role === 'assistant' && !msg._loading) {
+                    if (msg.role === 'assistant' && !msg._loading && !msg.isError) {
                         const regenBtn = document.createElement('button');
                         regenBtn.textContent = '重新生成';
                         regenBtn.addEventListener('click', (e) => { e.stopPropagation(); regenerateMessage(i); });
                         actions.appendChild(regenBtn);
                     }
 
-                    if (msg.content && msg.content.trim() && !msg._loading) {
+                    if (msg.content && msg.content.trim() && !msg._loading && !msg.isError) {
                         const favBtn = document.createElement('button');
                         favBtn.className = 'fav-btn';
                         const isFav = isMsgFavorited(session.id, i);
@@ -2083,7 +1528,7 @@
         }
 
         // ============================================================
-        //  编辑 & 重新生成（全部保留）
+        //  编辑 & 重新生成
         // ============================================================
         function editUserMessage(index) {
             const session = getCurrentSession();
@@ -2178,14 +1623,20 @@
         }
 
         // ============================================================
-        //  发送消息（全部保留）
+        //  发送消息（带详细错误捕获）
         // ============================================================
         async function sendMessage() {
             if (isStreaming) return;
             const key = localStorage.getItem(KEY_STORAGE);
-            if (!key) { alert('请先保存 API Key'); return; }
+            if (!key) {
+                alert('请先在设置中保存 API Key');
+                return;
+            }
             const text = promptInput.value.trim();
-            if (!text && pendingAttachments.length === 0) { alert('请输入问题或上传文件'); return; }
+            if (!text && pendingAttachments.length === 0) {
+                alert('请输入问题或上传文件');
+                return;
+            }
 
             const session = getCurrentSession();
             if (!session) { createNewSession(); }
@@ -2278,19 +1729,30 @@
 
                 const response = await fetch('https://api.deepseek.com/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
                     body: JSON.stringify(requestBody),
                     signal: abortController.signal
                 });
 
+                // 检查 HTTP 状态
                 if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(`API错误(${response.status}): ${errData.error?.message || '请检查Key'}`);
+                    let errorDetail = `HTTP ${response.status}`;
+                    try {
+                        const errData = await response.json();
+                        errorDetail += `\n${JSON.stringify(errData, null, 2)}`;
+                    } catch (e) {
+                        errorDetail += `\n${await response.text()}`;
+                    }
+                    throw new Error(errorDetail);
                 }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
+
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -2317,7 +1779,9 @@
                                         chatBox.scrollTop = chatBox.scrollHeight;
                                     }
                                 }
-                            } catch (e) {}
+                            } catch (e) {
+                                // 解析错误忽略
+                            }
                         }
                     }
                 }
@@ -2336,24 +1800,19 @@
                 setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
 
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    const savedMsg = session.messages[aiMsgIndex];
-                    if (savedMsg) {
-                        savedMsg.content = fullContent || '(已停止)';
-                        savedMsg.reasoning = showReasoning ? fullReasoning : '';
-                        savedMsg._loading = false;
-                    }
-                    saveSessions();
-                    renderChat();
-                    statusShort.textContent = '⏹ 已停止生成';
-                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止生成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
-                } else {
-                    session.messages.pop();
-                    session.messages.push({ role: 'assistant', content: `❌ 出错：${error.message}`, reasoning: showReasoning ? (fullReasoning || '出错前思考') : '' });
-                    saveSessions();
-                    renderChat();
-                    statusShort.textContent = '⚠️ 请求失败';
+                // 移除占位
+                const savedMsg = session.messages[aiMsgIndex];
+                if (savedMsg) {
+                    savedMsg.content = '❌ 请求失败';
+                    savedMsg.isError = true;
+                    savedMsg.errorDetail = error.message || '未知错误';
+                    savedMsg._loading = false;
                 }
+                saveSessions();
+                renderChat();
+                statusShort.textContent = '⚠️ 请求失败';
+                // 在控制台打印详细信息方便调试
+                console.error('请求失败详情:', error);
             } finally {
                 sendBtn.disabled = false;
                 stopBtn.style.display = 'none';
@@ -2430,7 +1889,7 @@
         });
 
         // ============================================================
-        //  文件夹 & 会话管理（全部保留）
+        //  文件夹 & 会话管理（省略，与之前一致）
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
@@ -2776,7 +2235,7 @@
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });
         settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('active'); });
 
-        // 深色模式（修复切换逻辑）
+        // 深色模式
         settingsDarkToggle.addEventListener('click', () => {
             const isLight = document.body.classList.toggle('light');
             settingsDarkToggle.classList.toggle('active', isLight);
@@ -2831,7 +2290,7 @@
             settingsMemoryConfirm.disabled = true;
         });
 
-        // API Key（无粘贴按钮）
+        // API Key
         settingsApiSave.addEventListener('click', () => {
             const key = settingsApiKey.value.trim();
             if (key) {
@@ -2854,7 +2313,7 @@
             }
         });
 
-        // 字号（卡片式）
+        // 字号
         fontSizeOptions.addEventListener('click', (e) => {
             const card = e.target.closest('.font-card');
             if (!card) return;

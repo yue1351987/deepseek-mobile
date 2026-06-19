@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My DeepSeek</title>
     <style>
-        /* ========== 基础变量（完整样式，同前） ========== */
+        /* ========== 基础变量（同前，略作精简） ========== */
         :root {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
@@ -833,11 +833,39 @@
             .api-key-row input { min-width: 80px; }
             .api-key-row .action-btn { font-size: 12px; padding: 4px 10px; }
         }
+
+        /* ========== 文件夹折叠专用 ========== */
+        .folder-toggle-icon {
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 4px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .folder-toggle-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        .folder-header {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            cursor: pointer;
+            user-select: none;
+        }
+        .folder-header .folder-icon {
+            margin-right: 6px;
+        }
+        .folder-header .session-name {
+            flex: 1;
+        }
+        .folder-header .item-actions {
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
 
-    <!-- ====== 顶部导航 ====== -->
+    <!-- ====== 顶部导航（同前） ====== -->
     <div id="topbar">
         <button id="menuBtn" aria-label="菜单">
             <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -902,7 +930,7 @@
     <!-- 底部状态栏 -->
     <div id="statusBar"><span id="statusText"></span></div>
 
-    <!-- ====== 设置浮层面板 ====== -->
+    <!-- ====== 设置浮层面板（同前） ====== -->
     <div id="settingsOverlay">
         <div id="settingsPanel">
             <div class="panel-header"><h2>设置</h2><button class="close-btn" id="closeSettingsBtn">✕</button></div>
@@ -1023,7 +1051,7 @@
         let pendingMemory = 'full';
 
         const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v7';
-        const STORAGE_FOLDERS_KEY = 'deepseek_folders_v4';
+        const STORAGE_FOLDERS_KEY = 'deepseek_folders_v5'; // 版本升级，增加 collapsed
         const STORAGE_FAVORITES_KEY = 'deepseek_favorites_v4';
         const KEY_STORAGE = 'deepseek_api_key';
         const THEME_KEY = 'deepseek_theme';
@@ -1035,7 +1063,7 @@
         const FONT_SIZE_KEY = 'deepseek_font_size';
         const MEMORY_MODE_KEY = 'deepseek_memory_mode';
 
-        // DOM 引用
+        // DOM 引用（略）
         const chatBox = document.getElementById('chatBox');
         const promptInput = document.getElementById('prompt');
         const sendBtn = document.getElementById('sendBtn');
@@ -1116,20 +1144,19 @@
 
         function estimateTokens(text) { if (!text) return 0; return Math.ceil(text.length / 1.8); }
 
+        // 【修正】计算整个对话的总 Token（所有输入版本和输出版本）
         function updateTokenCounter() {
             const session = getCurrentSession();
             if (!session) { convTokensLabel.textContent = '~0'; return; }
             let total = 0;
             session.turns.forEach(turn => {
-                const iv = turn.inputVersions[turn.selectedInputIdx];
-                if (iv) {
-                    total += estimateTokens(iv.content || '');
-                    const ov = iv.outputVersions[iv.selectedOutputIdx];
-                    if (ov) {
-                        total += estimateTokens(ov.content || '');
+                turn.inputVersions.forEach(iv => {
+                    if (iv.content) total += estimateTokens(iv.content);
+                    iv.outputVersions.forEach(ov => {
+                        if (ov.content) total += estimateTokens(ov.content);
                         if (ov.reasoning) total += estimateTokens(ov.reasoning);
-                    }
-                }
+                    });
+                });
             });
             convTokensLabel.textContent = `~${total}`;
         }
@@ -1168,7 +1195,7 @@
         }
 
         // ============================================================
-        // 收藏功能（基于输入版本）
+        // 收藏功能（同前）
         // ============================================================
         function toggleFavoriteMsg(sessionId, turnIdx, inputIdx) {
             const session = sessions.find(s => s.id === sessionId);
@@ -1332,6 +1359,8 @@
 
             const rawFolders = localStorage.getItem(STORAGE_FOLDERS_KEY);
             if (rawFolders) { try { folders = JSON.parse(rawFolders); } catch { folders = []; } }
+            // 确保每个 folder 有 collapsed 字段
+            folders.forEach(f => { if (f.collapsed === undefined) f.collapsed = false; });
 
             const rawSessions = localStorage.getItem(STORAGE_SESSIONS_KEY);
             if (rawSessions) { try { sessions = JSON.parse(rawSessions); } catch { sessions = []; } }
@@ -1482,7 +1511,7 @@
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
-        // 渲染聊天 - 双层版本
+        // 渲染聊天 - 双层版本（同前）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1625,7 +1654,7 @@
         }
 
         // ============================================================
-        // 版本控制组件
+        // 版本控制组件（同前）
         // ============================================================
         function createInputVersionControl(turn, turnIdx) {
             const container = document.createElement('span');
@@ -1679,7 +1708,7 @@
         }
 
         // ============================================================
-        // 切换版本
+        // 切换版本（同前）
         // ============================================================
         function switchInputVersion(turnIdx, direction) {
             const session = getCurrentSession();
@@ -2040,7 +2069,7 @@
         });
 
         // ============================================================
-        // 会话管理
+        // 会话管理（同前）
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
@@ -2057,7 +2086,7 @@
         function createFolder() {
             const name = prompt('请输入文件夹名称：', '新文件夹');
             if (!name || name.trim() === '') return;
-            const folder = { id: generateId(), name: name.trim(), pinned: false };
+            const folder = { id: generateId(), name: name.trim(), pinned: false, collapsed: false };
             folders.push(folder);
             saveSessions();
             renderDrawer();
@@ -2077,6 +2106,15 @@
         function toggleFolderPin(folderId) {
             const folder = folders.find(f => f.id === folderId);
             if (folder) { folder.pinned = !folder.pinned; saveSessions(); renderDrawer(); }
+        }
+
+        function toggleFolderCollapse(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (folder) {
+                folder.collapsed = !folder.collapsed;
+                saveSessions();
+                renderDrawer();
+            }
         }
 
         function deleteFolder(folderId) {
@@ -2117,7 +2155,6 @@
             }
         }
 
-        // 直接导出的旧函数保留但不再绑定到按钮
         function exportSingleSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
             if (!session) return;
@@ -2142,9 +2179,6 @@
             URL.revokeObjectURL(a.href);
         }
 
-        // ============================================================
-        // 导出模态框相关函数
-        // ============================================================
         function openExportModal() {
             exportModal.classList.add('active');
         }
@@ -2153,7 +2187,7 @@
         }
 
         // ============================================================
-        // 渲染抽屉
+        // 渲染抽屉（增加折叠支持）
         // ============================================================
         function renderDrawer() {
             sessionListContainer.innerHTML = '';
@@ -2195,13 +2229,12 @@
                 });
                 actions.appendChild(renameBtn);
 
-                // ---- 修改：导出按钮改为打开模态框 ----
                 const exportBtn = document.createElement('button');
                 exportBtn.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
                 exportBtn.title = '导出对话';
                 exportBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    openExportModal(); // 打开模态框
+                    openExportModal();
                 });
                 actions.appendChild(exportBtn);
 
@@ -2259,9 +2292,23 @@
                     }
                 });
 
+                // 文件夹头部（可点击折叠）
+                const header = document.createElement('div');
+                header.className = 'folder-header';
+
                 const icon = document.createElement('span');
                 icon.className = 'folder-icon';
                 icon.textContent = '📁';
+
+                // 折叠图标
+                const toggleIcon = document.createElement('span');
+                toggleIcon.className = 'folder-toggle-icon' + (folder.collapsed ? ' collapsed' : '');
+                toggleIcon.textContent = '▼';
+                toggleIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFolderCollapse(folder.id);
+                });
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'session-name';
                 nameSpan.textContent = folder.name;
@@ -2271,6 +2318,7 @@
                     badge.textContent = '📌';
                     nameSpan.appendChild(badge);
                 }
+
                 const actions = document.createElement('div');
                 actions.className = 'item-actions';
                 const renameBtn = document.createElement('button');
@@ -2289,27 +2337,32 @@
                 delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteFolder(folder.id); });
                 actions.appendChild(delBtn);
 
-                folderDiv.appendChild(icon);
-                folderDiv.appendChild(nameSpan);
-                folderDiv.appendChild(actions);
+                header.appendChild(toggleIcon);
+                header.appendChild(icon);
+                header.appendChild(nameSpan);
+                header.appendChild(actions);
+                folderDiv.appendChild(header);
                 container.appendChild(folderDiv);
 
+                // 子会话列表（根据折叠状态显示/隐藏）
                 const childSessions = sessions.filter(s => s.folderId === folder.id);
-                if (childSessions.length > 0) {
+                if (childSessions.length > 0 && !folder.collapsed) {
                     const childrenDiv = document.createElement('div');
                     childrenDiv.className = 'folder-children';
                     const sorted = [...childSessions].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
                     sorted.forEach(s => { childrenDiv.appendChild(createSessionItem(s)); });
                     container.appendChild(childrenDiv);
-                } else {
+                } else if (childSessions.length === 0 && !folder.collapsed) {
                     const empty = document.createElement('div');
                     empty.style.cssText = 'color:var(--text-muted);font-size:12px;padding:4px 12px;';
                     empty.textContent = '（空文件夹）';
                     container.appendChild(empty);
                 }
+                // 如果折叠，不显示子项
                 return container;
             }
 
+            // 渲染置顶文件夹、置顶对话、普通文件夹、普通对话（同前）
             if (pinnedFolders.length) {
                 const title = document.createElement('div');
                 title.className = 'drawer-section-title';
@@ -2347,7 +2400,7 @@
         }
 
         // ============================================================
-        // 会话切换、创建
+        // 会话切换、创建（同前）
         // ============================================================
         function switchSession(id) {
             if (id === currentId) { closeDrawer(); return; }
@@ -2405,7 +2458,7 @@
         });
 
         // ============================================================
-        // 设置面板交互
+        // 设置面板交互（同前）
         // ============================================================
         settingsBtn.addEventListener('click', () => { settingsOverlay.classList.add('active'); });
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });
@@ -2521,12 +2574,12 @@
         });
 
         // ============================================================
-        // 备份 & 恢复
+        // 备份 & 恢复（同前）
         // ============================================================
         function backupData() {
             try {
                 const data = {
-                    version: '7.0',
+                    version: '7.1',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     folders: folders,
@@ -2667,7 +2720,7 @@
         });
 
         // ============================================================
-        // 搜索
+        // 搜索（同前）
         // ============================================================
         function performSearch(query) {
             if (!query.trim()) { searchResults.innerHTML = '<div style="color:var(--text-muted);padding:20px;">输入关键词搜索</div>'; return; }
@@ -2760,7 +2813,6 @@
             closeExport();
         }
 
-        // 绑定导出模态框事件
         exportModal.addEventListener('click', (e) => { if (e.target === exportModal) closeExport(); });
         closeExportBtn.addEventListener('click', closeExport);
         exportAI.addEventListener('click', () => exportChat('assistant'));

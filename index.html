@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My ds</title>
+    <title>My DeepSeek</title>
     <style>
         :root {
             --bg-main: #f2f4f8;
@@ -25,6 +25,7 @@
             --radius-md: 12px;
             --radius-sm: 8px;
             --transition: 0.2s ease;
+            --highlight-bg: #fef08a;
         }
         body.dark {
             --bg-main: #0f1117;
@@ -40,6 +41,7 @@
             --shadow-heavy: 0 8px 30px rgba(0,0,0,0.5);
             --accent-blue: #4b8bf7;
             --accent-blue-hover: #5b9aff;
+            --highlight-bg: #664d00;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -117,11 +119,46 @@
         }
         #newChatBtn:active { background: var(--accent-blue-hover); }
 
-        /* ========== 目录按钮 ========== */
+        /* ========== 对话状态栏（标题下方） ========== */
+        #convStatusBar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 4px 16px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        #convStatusBar .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        #convStatusBar .status-item .label {
+            color: var(--text-muted);
+        }
+        #convStatusBar .status-item .value {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        #convStatusBar .status-item .value.model { color: var(--accent-blue); }
+
+        /* ========== 目录按钮行（在输入框上方） ========== */
+        #tocRow {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 4px 4px 4px;
+            gap: 8px;
+        }
         #tocBtn {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
             color: var(--text-muted);
             padding: 0 4px;
@@ -325,29 +362,27 @@
             flex-direction: column;
             gap: 6px;
         }
-        #deepThinkingRow {
+        /* 目录按钮行（在输入框上方） */
+        #inputTopRow {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 4px;
-            flex-wrap: wrap;
-            gap: 4px;
         }
-        #deepThinkingLeft {
+        #inputTopLeft {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-        #deepThinkingLeft label {
+        #inputTopLeft label {
             font-size: 13px;
             color: var(--text-muted);
             cursor: pointer;
             user-select: none;
         }
-        #deepThinkingLeft .chars-label {
+        #inputTopLeft .chars-label {
             font-size: 12px;
             color: var(--text-muted);
-            margin-left: 4px;
         }
         .switch {
             position: relative;
@@ -377,28 +412,22 @@
         .switch.active .slider {
             transform: translateX(20px);
         }
-        #deepThinkingRight {
+        #inputTopRight {
             display: flex;
             align-items: center;
-            gap: 14px;
-            font-size: 12px;
-            color: var(--text-muted);
-            flex-wrap: wrap;
+            gap: 8px;
         }
-        #deepThinkingRight .status-item {
+        #inputTopRight .status-item {
             display: flex;
             align-items: center;
             gap: 4px;
+            font-size: 12px;
+            color: var(--text-muted);
         }
-        #deepThinkingRight .model-label {
+        #inputTopRight .status-item .value {
             font-weight: 500;
             color: var(--text-secondary);
         }
-        #deepThinkingRight .tokens-label,
-        #deepThinkingRight .status-label {
-            color: var(--text-muted);
-        }
-        #deepThinkingRight .status-label { color: var(--text-secondary); font-weight: 500; }
 
         #inputRow {
             display: flex;
@@ -497,7 +526,7 @@
         #settingsPanel {
             background: var(--bg-surface);
             border-radius: var(--radius-lg);
-            max-width: 400px;
+            max-width: 420px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
@@ -530,33 +559,98 @@
         .setting-group {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 18px;
         }
         .setting-item {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            font-size: 14px;
+            flex-direction: column;
+            gap: 6px;
         }
-        .setting-item label {
-            flex: 1;
+        .setting-item .setting-label {
+            font-size: 14px;
+            font-weight: 500;
             color: var(--text-secondary);
         }
-        .setting-item select,
-        .setting-item input[type="number"],
-        .setting-item input[type="password"] {
-            padding: 6px 12px;
+        .setting-item .setting-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .setting-item .options-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .setting-item .option-card {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 14px;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            background: var(--bg-input);
+            position: relative;
+        }
+        .setting-item .option-card .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--border-light);
+            margin-right: 6px;
+            vertical-align: middle;
+            transition: all var(--transition);
+        }
+        .setting-item .option-card.selected {
+            border-color: var(--accent-blue);
+            background: var(--bg-surface);
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+        .setting-item .option-card.selected .dot {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        .setting-item .option-card .label-text {
+            vertical-align: middle;
+        }
+        .setting-item .option-card:active { transform: scale(0.97); }
+        .setting-item .confirm-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+        .setting-item .confirm-row button {
+            padding: 6px 20px;
+            border: none;
+            border-radius: 30px;
+            background: var(--accent-blue);
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        .setting-item .confirm-row button:active { background: var(--accent-blue-hover); }
+        .setting-item .confirm-row button:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .setting-item input[type="password"],
+        .setting-item input[type="number"] {
+            padding: 8px 12px;
             border: 1px solid var(--border-light);
             border-radius: var(--radius-sm);
             background: var(--bg-input);
             color: var(--text-primary);
             font-size: 13px;
             outline: none;
-            min-width: 100px;
+            width: 100%;
             transition: border var(--transition);
         }
-        .setting-item select:focus,
         .setting-item input:focus { border-color: var(--accent-blue); }
         .setting-item .toggle-btn {
             padding: 4px 16px;
@@ -567,6 +661,7 @@
             font-size: 13px;
             cursor: pointer;
             transition: all var(--transition);
+            align-self: flex-start;
         }
         .setting-item .toggle-btn.active {
             background: var(--accent-blue);
@@ -574,7 +669,7 @@
             border-color: var(--accent-blue);
         }
         .setting-item .action-btn {
-            padding: 6px 14px;
+            padding: 6px 16px;
             border: none;
             border-radius: 30px;
             background: var(--accent-blue);
@@ -582,6 +677,7 @@
             font-size: 13px;
             cursor: pointer;
             transition: background var(--transition);
+            align-self: flex-start;
         }
         .setting-item .action-btn:active { background: var(--accent-blue-hover); }
         .setting-item .action-btn.secondary {
@@ -593,6 +689,7 @@
         .setting-item .file-input-wrapper {
             position: relative;
             overflow: hidden;
+            align-self: flex-start;
         }
         .setting-item .file-input-wrapper input[type="file"] {
             position: absolute;
@@ -604,29 +701,15 @@
         .setting-item .api-key-row {
             display: flex;
             gap: 6px;
-            flex: 1;
-            align-items: center;
+            width: 100%;
         }
         .setting-item .api-key-row input {
             flex: 1;
-            min-width: 80px;
-        }
-        .setting-item .api-key-row .action-btn {
-            padding: 4px 12px;
-            font-size: 12px;
-        }
-        .setting-item .model-confirm-row {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-        .setting-item .model-confirm-row select {
-            min-width: 100px;
         }
         .divider {
             height: 1px;
             background: var(--border-light);
-            margin: 8px 0;
+            margin: 4px 0;
         }
 
         /* ========== 抽屉 ========== */
@@ -789,6 +872,10 @@
             transition: background var(--transition);
         }
         #drawerFooter .footer-row button:active { background: var(--border-light); }
+        #drawerFooter .footer-row .favorite-btn {
+            color: #f59e0b;
+        }
+        #drawerFooter .footer-row .favorite-btn:active { opacity: 0.7; }
         #storageInfo {
             font-size: 12px;
             color: var(--text-muted);
@@ -991,8 +1078,9 @@
             #titleArea { font-size: 14px; }
             #newChatBtn { width: 30px; height: 30px; font-size: 18px; }
             #settingsPanel { padding: 20px; }
-            #deepThinkingRight { font-size: 11px; gap: 8px; }
-            #deepThinkingRight .status-item { gap: 2px; }
+            #convStatusBar { font-size: 11px; gap: 12px; }
+            #inputTopRight .status-item { font-size: 11px; }
+            .setting-item .option-card { min-width: 60px; padding: 8px 10px; font-size: 12px; }
         }
     </style>
 </head>
@@ -1003,10 +1091,25 @@
         <button id="menuBtn">☰</button>
         <span id="titleArea">新对话</span>
         <div class="topbar-right">
-            <button id="tocBtn" title="显示/隐藏目录">📑</button>
             <button id="searchBtnTop">🔍</button>
             <button id="newChatBtn">+</button>
         </div>
+    </div>
+
+    <!-- 对话状态栏（标题下方） -->
+    <div id="convStatusBar">
+        <span class="status-item">
+            <span class="label">模式</span>
+            <span class="value model" id="convModelLabel">快速</span>
+        </span>
+        <span class="status-item">
+            <span class="label">Token</span>
+            <span class="value" id="convTokensLabel">~0</span>
+        </span>
+        <span class="status-item">
+            <span class="label">状态</span>
+            <span class="value" id="convStatusLabel">就绪</span>
+        </span>
     </div>
 
     <!-- 目录面板 -->
@@ -1020,24 +1123,20 @@
 
     <!-- 输入区域 -->
     <div id="inputArea">
-        <div id="deepThinkingRow">
-            <div id="deepThinkingLeft">
+        <!-- 输入框上方行：左侧深度思考+字符，右侧目录按钮 -->
+        <div id="inputTopRow">
+            <div id="inputTopLeft">
                 <label for="deepSwitch">深度思考</label>
                 <div id="deepSwitch" class="switch">
                     <div class="slider"></div>
                 </div>
                 <span class="chars-label" id="statusChars">0 字符</span>
             </div>
-            <div id="deepThinkingRight">
+            <div id="inputTopRight">
                 <span class="status-item">
-                    <span class="model-label" id="statusModel">快速</span>
+                    <span class="value" id="inputStatusShort">就绪</span>
                 </span>
-                <span class="status-item" id="tokensGroup">
-                    <span class="tokens-label" id="statusTokens">~0 tokens</span>
-                </span>
-                <span class="status-item">
-                    <span class="status-label" id="statusShort">就绪</span>
-                </span>
+                <button id="tocBtn" title="显示/隐藏目录">📑</button>
             </div>
         </div>
         <div id="inputRow">
@@ -1049,7 +1148,7 @@
         </div>
     </div>
 
-    <!-- 状态栏 -->
+    <!-- 底部状态栏 -->
     <div id="statusBar">
         <span id="statusText"></span>
     </div>
@@ -1062,58 +1161,89 @@
                 <button id="closeSettingsBtn">✕</button>
             </h2>
             <div class="setting-group">
+                <!-- 深色模式 -->
                 <div class="setting-item">
-                    <label>深色模式</label>
+                    <div class="setting-label">深色模式</div>
                     <button id="settingsDarkToggle" class="toggle-btn">关闭</button>
                 </div>
+
+                <!-- 模型模式（卡片选择 + 确认） -->
                 <div class="setting-item">
-                    <label>模型模式</label>
-                    <div class="model-confirm-row">
-                        <select id="settingsModeSelect">
-                            <option value="flash">快速 (Flash)</option>
-                            <option value="pro">专家 (Pro)</option>
-                        </select>
-                        <button id="settingsModeConfirm" class="action-btn">确认</button>
+                    <div class="setting-label">模型模式</div>
+                    <div class="setting-desc">选择 AI 的推理方式，快速模式响应更快，专家模式推理更深。</div>
+                    <div class="options-row" id="modeOptions">
+                        <div class="option-card" data-value="flash">
+                            <span class="dot"></span><span class="label-text">快速 (Flash)</span>
+                        </div>
+                        <div class="option-card" data-value="pro">
+                            <span class="dot"></span><span class="label-text">专家 (Pro)</span>
+                        </div>
+                    </div>
+                    <div class="confirm-row">
+                        <button id="settingsModeConfirm" disabled>确认</button>
                     </div>
                 </div>
+
+                <!-- 记忆摘要（卡片选择 + 确认） -->
                 <div class="setting-item">
-                    <label>API Key</label>
+                    <div class="setting-label">记忆摘要</div>
+                    <div class="setting-desc">选择发送给 AI 的历史消息范围，滑动窗口可节省 Token。</div>
+                    <div class="options-row" id="memoryOptions">
+                        <div class="option-card" data-value="full">
+                            <span class="dot"></span><span class="label-text">全量发送</span>
+                        </div>
+                        <div class="option-card" data-value="window">
+                            <span class="dot"></span><span class="label-text">滑动窗口 (最近20条)</span>
+                        </div>
+                    </div>
+                    <div class="confirm-row">
+                        <button id="settingsMemoryConfirm" disabled>确认</button>
+                    </div>
+                </div>
+
+                <!-- API Key -->
+                <div class="setting-item">
+                    <div class="setting-label">API Key</div>
                     <div class="api-key-row">
                         <input type="password" id="settingsApiKey" placeholder="输入 Key">
                         <button id="settingsApiSave" class="action-btn">保存</button>
                         <button id="settingsApiClear" class="action-btn secondary">修改</button>
                     </div>
                 </div>
+
+                <!-- 字号 -->
                 <div class="setting-item">
-                    <label>字号 (px)</label>
+                    <div class="setting-label">字号 (px)</div>
                     <input type="number" id="settingsFontSize" value="15" min="12" max="24" step="1">
                 </div>
+
+                <!-- 显示思考过程 -->
                 <div class="setting-item">
-                    <label>记忆摘要</label>
-                    <select id="settingsMemoryMode">
-                        <option value="full">全量发送</option>
-                        <option value="window">滑动窗口 (最近20条)</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>显示思考过程</label>
+                    <div class="setting-label">显示思考过程</div>
                     <button id="settingsShowReasoning" class="toggle-btn active">显示</button>
                 </div>
+
+                <!-- 显示字符计数 -->
                 <div class="setting-item">
-                    <label>显示字符计数</label>
+                    <div class="setting-label">显示字符计数</div>
                     <button id="settingsShowChars" class="toggle-btn active">显示</button>
                 </div>
+
+                <!-- 显示Token计数 -->
                 <div class="setting-item">
-                    <label>显示Token计数</label>
+                    <div class="setting-label">显示Token计数</div>
                     <button id="settingsShowTokens" class="toggle-btn active">显示</button>
                 </div>
+
                 <div class="divider"></div>
+
+                <!-- 备份/恢复 -->
                 <div class="setting-item">
-                    <label>备份数据</label>
+                    <div class="setting-label">备份数据</div>
                     <button id="settingsBackupBtn" class="action-btn">备份</button>
                 </div>
                 <div class="setting-item">
-                    <label>恢复数据</label>
+                    <div class="setting-label">恢复数据</div>
                     <div class="file-input-wrapper">
                         <button class="action-btn">选择文件</button>
                         <input type="file" id="settingsBackupFileInput" accept=".json">
@@ -1127,7 +1257,7 @@
     <div id="favoriteModal">
         <div id="favoritePanel">
             <h2>
-                ⭐ 收藏的对话
+                ❤️ 收藏的对话
                 <button id="closeFavoriteBtn">✕</button>
             </h2>
             <div id="favoriteList"></div>
@@ -1177,7 +1307,7 @@
             </div>
             <div class="footer-row">
                 <button id="settingsBtn">⚙️ 设置</button>
-                <button id="favoriteBtn">⭐ 收藏</button>
+                <button id="favoriteBtn" class="favorite-btn">❤️</button>
             </div>
         </div>
     </div>
@@ -1201,6 +1331,10 @@
         let showTokens = true;
         let fontSize = 15;
         let memoryMode = 'full';
+
+        // 设置暂存（用于卡片选择+确认）
+        let pendingMode = 'flash';
+        let pendingMemory = 'full';
 
         const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v4';
         const STORAGE_FOLDERS_KEY = 'deepseek_folders_v4';
@@ -1232,7 +1366,7 @@
         const fileInput = document.getElementById('fileInput');
         const attachmentBar = document.getElementById('attachmentBar');
         const statusText = document.getElementById('statusText');
-        const statusShort = document.getElementById('statusShort');
+        const statusShort = document.getElementById('inputStatusShort');
         const searchBtnTop = document.getElementById('searchBtnTop');
         const searchModal = document.getElementById('searchModal');
         const searchInput = document.getElementById('searchInput');
@@ -1244,10 +1378,8 @@
         const exportUser = document.getElementById('exportUser');
         const exportAll = document.getElementById('exportAll');
         const deepSwitch = document.getElementById('deepSwitch');
-        const statusModel = document.getElementById('statusModel');
-        const statusTokens = document.getElementById('statusTokens');
         const statusChars = document.getElementById('statusChars');
-        const tokensGroup = document.getElementById('tokensGroup');
+        const tokensGroup = document.getElementById('tokensGroup'); // not used directly
         const storageText = document.getElementById('storageText');
         const storageBar = document.getElementById('storageBar');
         const storagePercent = document.getElementById('storagePercent');
@@ -1257,24 +1389,28 @@
         const favoriteModal = document.getElementById('favoriteModal');
         const closeFavoriteBtn = document.getElementById('closeFavoriteBtn');
         const favoriteList = document.getElementById('favoriteList');
+        const convModelLabel = document.getElementById('convModelLabel');
+        const convTokensLabel = document.getElementById('convTokensLabel');
+        const convStatusLabel = document.getElementById('convStatusLabel');
 
         // 设置面板
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsOverlay = document.getElementById('settingsOverlay');
         const closeSettingsBtn = document.getElementById('closeSettingsBtn');
         const settingsDarkToggle = document.getElementById('settingsDarkToggle');
-        const settingsModeSelect = document.getElementById('settingsModeSelect');
         const settingsModeConfirm = document.getElementById('settingsModeConfirm');
+        const settingsMemoryConfirm = document.getElementById('settingsMemoryConfirm');
         const settingsApiKey = document.getElementById('settingsApiKey');
         const settingsApiSave = document.getElementById('settingsApiSave');
         const settingsApiClear = document.getElementById('settingsApiClear');
         const settingsFontSize = document.getElementById('settingsFontSize');
-        const settingsMemoryMode = document.getElementById('settingsMemoryMode');
         const settingsShowReasoning = document.getElementById('settingsShowReasoning');
         const settingsShowChars = document.getElementById('settingsShowChars');
         const settingsShowTokens = document.getElementById('settingsShowTokens');
         const settingsBackupBtn = document.getElementById('settingsBackupBtn');
         const settingsBackupFileInput = document.getElementById('settingsBackupFileInput');
+        const modeOptions = document.getElementById('modeOptions');
+        const memoryOptions = document.getElementById('memoryOptions');
 
         // ============================================================
         //  工具函数
@@ -1294,14 +1430,14 @@
 
         function updateTokenCounter() {
             const session = getCurrentSession();
-            if (!session) { statusTokens.textContent = '~0 tokens'; return; }
+            if (!session) { convTokensLabel.textContent = '~0'; return; }
             let total = 0;
             session.messages.forEach(m => {
                 total += estimateTokens(m.content || '');
                 if (m.images) total += 50;
                 if (m.reasoning) total += estimateTokens(m.reasoning);
             });
-            statusTokens.textContent = `~${total} tokens`;
+            convTokensLabel.textContent = `~${total}`;
         }
 
         function updateCharCounter() {
@@ -1350,7 +1486,7 @@
 
             const savedMode = localStorage.getItem(MODE_KEY);
             if (savedMode === 'pro' || savedMode === 'flash') mode = savedMode;
-            settingsModeSelect.value = mode;
+            pendingMode = mode;
             updateModeUI();
 
             const dt = localStorage.getItem(DEEP_THINKING_KEY);
@@ -1376,7 +1512,8 @@
 
             const mm = localStorage.getItem(MEMORY_MODE_KEY);
             if (mm === 'window' || mm === 'full') memoryMode = mm;
-            settingsMemoryMode.value = memoryMode;
+            pendingMemory = memoryMode;
+            updateMemoryUI();
 
             const rawFolders = localStorage.getItem(STORAGE_FOLDERS_KEY);
             if (rawFolders) { try { folders = JSON.parse(rawFolders); } catch { folders = []; } }
@@ -1395,19 +1532,31 @@
             saveSessions();
             updateStorageInfo();
             updateTOC();
+            updateConvStatus();
         }
 
         // ============================================================
         //  UI 更新函数
         // ============================================================
         function updateModeUI() {
-            if (mode === 'flash') {
-                statusModel.textContent = '快速';
-            } else {
-                statusModel.textContent = '专家';
-            }
-            settingsModeSelect.value = mode;
+            const modelName = mode === 'flash' ? '快速' : '专家';
+            convModelLabel.textContent = modelName;
+            // 更新卡片选中状态
+            document.querySelectorAll('#modeOptions .option-card').forEach(card => {
+                const val = card.dataset.value;
+                card.classList.toggle('selected', val === mode);
+            });
+            settingsModeConfirm.disabled = true;
+            // 更新深度思考开关
             updateDeepThinkingUI();
+        }
+
+        function updateMemoryUI() {
+            document.querySelectorAll('#memoryOptions .option-card').forEach(card => {
+                const val = card.dataset.value;
+                card.classList.toggle('selected', val === memoryMode);
+            });
+            settingsMemoryConfirm.disabled = true;
         }
 
         function updateDeepThinkingUI() {
@@ -1444,12 +1593,24 @@
             if (showTokens) {
                 settingsShowTokens.textContent = '显示';
                 settingsShowTokens.classList.add('active');
-                tokensGroup.style.display = 'inline-flex';
+                // tokens显示在 convStatusBar 中，由 updateConvStatus 控制
             } else {
                 settingsShowTokens.textContent = '隐藏';
                 settingsShowTokens.classList.remove('active');
-                tokensGroup.style.display = 'none';
             }
+            updateConvStatus();
+        }
+
+        function updateConvStatus() {
+            // 模式已由 updateModeUI 更新
+            // Tokens
+            if (showTokens) {
+                convTokensLabel.style.display = 'inline';
+            } else {
+                convTokensLabel.style.display = 'none';
+            }
+            // 状态
+            convStatusLabel.textContent = statusShort.textContent || '就绪';
         }
 
         // ============================================================
@@ -1462,8 +1623,9 @@
             saveSessions();
             renderDrawer();
             updateFavoriteList();
-            statusShort.textContent = session.favorited ? '⭐ 已收藏' : '⭐ 已取消收藏';
+            statusShort.textContent = session.favorited ? '❤️ 已收藏' : '❤️ 已取消收藏';
             setTimeout(() => { if (statusShort.textContent.includes('收藏')) statusShort.textContent = '就绪'; }, 1500);
+            updateConvStatus();
         }
 
         function updateFavoriteList() {
@@ -1530,7 +1692,7 @@
                     if (wrappers[index]) {
                         wrappers[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
                         wrappers[index].style.transition = 'background 0.3s';
-                        wrappers[index].style.background = 'var(--highlight-bg, #fef08a)';
+                        wrappers[index].style.background = 'var(--highlight-bg)';
                         setTimeout(() => wrappers[index].style.background = '', 1500);
                     }
                 });
@@ -1628,6 +1790,7 @@
             renderDrawer();
             updateTokenCounter();
             updateTOC();
+            updateConvStatus();
         }
 
         function createVersionControl(msg, msgIndex) {
@@ -1698,7 +1861,7 @@
             promptInput.value = newText.trim();
             promptInput.focus();
             statusShort.textContent = '消息已修改';
-            setTimeout(() => { if (statusShort.textContent === '消息已修改') statusShort.textContent = '就绪'; }, 1500);
+            setTimeout(() => { if (statusShort.textContent === '消息已修改') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
         }
 
         async function regenerateMessage(index) {
@@ -1756,7 +1919,7 @@
                 saveSessions();
                 renderChat();
                 statusShort.textContent = '✅ 重新生成完成';
-                setTimeout(() => { if (statusShort.textContent === '✅ 重新生成完成') statusShort.textContent = '就绪'; }, 2000);
+                setTimeout(() => { if (statusShort.textContent === '✅ 重新生成完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
             } catch (e) {
                 session.messages.pop();
                 session.messages.push({ role: 'assistant', content: `❌ 失败: ${e.message}` });
@@ -1807,6 +1970,7 @@
             stopBtn.style.display = 'flex';
             isStreaming = true;
             statusShort.textContent = '⏳ 生成中...';
+            updateConvStatus();
             abortController = new AbortController();
 
             const aiMsgIndex = session.messages.length;
@@ -1921,7 +2085,7 @@
                 msgDiv.classList.remove('cursor-blink');
                 renderChat();
                 statusShort.textContent = '✅ 回复完成';
-                setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; }, 2000);
+                setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
 
             } catch (error) {
                 if (error.name === 'AbortError') {
@@ -1934,7 +2098,7 @@
                     saveSessions();
                     renderChat();
                     statusShort.textContent = '⏹ 已停止生成';
-                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止生成') statusShort.textContent = '就绪'; }, 2000);
+                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止生成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
                 } else {
                     session.messages.pop();
                     session.messages.push({ role: 'assistant', content: `❌ 出错：${error.message}`, reasoning: showReasoning ? (fullReasoning || '出错前思考') : '' });
@@ -1949,11 +2113,12 @@
                 abortController = null;
                 chatBox.scrollTop = chatBox.scrollHeight;
                 updateCharCounter();
+                updateConvStatus();
             }
         }
 
         stopBtn.addEventListener('click', () => {
-            if (abortController) { abortController.abort(); statusShort.textContent = '⏹ 正在停止...'; }
+            if (abortController) { abortController.abort(); statusShort.textContent = '⏹ 正在停止...'; updateConvStatus(); }
         });
 
         // ============================================================
@@ -2027,7 +2192,7 @@
                 session.name = newName.trim();
                 saveSessions();
                 renderDrawer();
-                if (session.id === currentId) renderChat(); // 更新标题
+                if (session.id === currentId) renderChat();
             }
         }
 
@@ -2146,7 +2311,7 @@
                 if (session.favorited) {
                     const badge = document.createElement('span');
                     badge.className = 'favorite-badge';
-                    badge.textContent = '⭐';
+                    badge.textContent = '❤️';
                     nameSpan.appendChild(badge);
                 }
                 const actions = document.createElement('div');
@@ -2164,7 +2329,7 @@
 
                 // 收藏切换
                 const favBtn = document.createElement('button');
-                favBtn.textContent = session.favorited ? '⭐' : '☆';
+                favBtn.textContent = session.favorited ? '❤️' : '🤍';
                 favBtn.title = '收藏/取消收藏';
                 favBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -2350,6 +2515,7 @@
             closeDrawer();
             promptInput.focus();
             updateCharCounter();
+            updateConvStatus();
         }
 
         function openDrawer() { renderDrawer(); overlay.classList.add('active'); drawer.classList.add('open'); }
@@ -2374,7 +2540,7 @@
         });
 
         // ============================================================
-        //  设置面板交互
+        //  设置面板交互（卡片选择 + 确认）
         // ============================================================
         settingsBtn.addEventListener('click', () => { settingsOverlay.classList.add('active'); });
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });
@@ -2388,46 +2554,78 @@
             localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
         });
 
-        // 模型模式 - 确认按钮
+        // ===== 模型模式卡片选择 =====
+        modeOptions.addEventListener('click', (e) => {
+            const card = e.target.closest('.option-card');
+            if (!card) return;
+            const val = card.dataset.value;
+            if (val === pendingMode) return; // 已选中
+            // 取消其他选中
+            modeOptions.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            pendingMode = val;
+            settingsModeConfirm.disabled = false;
+        });
+
         settingsModeConfirm.addEventListener('click', () => {
-            const newMode = settingsModeSelect.value;
-            if (newMode !== mode) {
-                mode = newMode;
+            if (pendingMode !== mode) {
+                mode = pendingMode;
                 localStorage.setItem(MODE_KEY, mode);
                 updateModeUI();
                 statusShort.textContent = `已切换为 ${mode === 'flash' ? '快速' : '专家'} 模式`;
-                setTimeout(() => { if (statusShort.textContent.includes('切换')) statusShort.textContent = '就绪'; }, 1500);
-            } else {
-                statusShort.textContent = '模式未改变';
-                setTimeout(() => { if (statusShort.textContent === '模式未改变') statusShort.textContent = '就绪'; }, 1000);
+                setTimeout(() => { if (statusShort.textContent.includes('切换')) statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
+                updateConvStatus();
             }
+            settingsModeConfirm.disabled = true;
         });
 
-        // API Key - 保存
+        // ===== 记忆摘要卡片选择 =====
+        memoryOptions.addEventListener('click', (e) => {
+            const card = e.target.closest('.option-card');
+            if (!card) return;
+            const val = card.dataset.value;
+            if (val === pendingMemory) return;
+            memoryOptions.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            pendingMemory = val;
+            settingsMemoryConfirm.disabled = false;
+        });
+
+        settingsMemoryConfirm.addEventListener('click', () => {
+            if (pendingMemory !== memoryMode) {
+                memoryMode = pendingMemory;
+                localStorage.setItem(MEMORY_MODE_KEY, memoryMode);
+                updateMemoryUI();
+                statusShort.textContent = `记忆摘要: ${memoryMode === 'full' ? '全量' : '窗口(最近20条)'}`;
+                setTimeout(() => { if (statusShort.textContent.includes('记忆摘要')) statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
+            }
+            settingsMemoryConfirm.disabled = true;
+        });
+
+        // ===== API Key =====
         settingsApiSave.addEventListener('click', () => {
             const key = settingsApiKey.value.trim();
             if (key) {
                 localStorage.setItem(KEY_STORAGE, key);
                 currentKey = key;
                 statusShort.textContent = '✅ Key 已保存';
-                setTimeout(() => { if (statusShort.textContent === '✅ Key 已保存') statusShort.textContent = '就绪'; }, 1500);
+                setTimeout(() => { if (statusShort.textContent === '✅ Key 已保存') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
             } else {
                 alert('请输入有效的 API Key');
             }
         });
 
-        // API Key - 修改（清除）
         settingsApiClear.addEventListener('click', () => {
             if (confirm('确定要清除 API Key 吗？')) {
                 localStorage.removeItem(KEY_STORAGE);
                 currentKey = '';
                 settingsApiKey.value = '';
                 statusShort.textContent = 'Key 已清除';
-                setTimeout(() => { if (statusShort.textContent === 'Key 已清除') statusShort.textContent = '就绪'; }, 1500);
+                setTimeout(() => { if (statusShort.textContent === 'Key 已清除') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
             }
         });
 
-        // 字号
+        // ===== 字号 =====
         settingsFontSize.addEventListener('change', () => {
             let val = parseInt(settingsFontSize.value);
             if (isNaN(val) || val < 12) val = 12;
@@ -2438,25 +2636,17 @@
             renderChat();
         });
 
-        // 记忆摘要
-        settingsMemoryMode.addEventListener('change', () => {
-            memoryMode = settingsMemoryMode.value;
-            localStorage.setItem(MEMORY_MODE_KEY, memoryMode);
-            statusShort.textContent = `记忆摘要: ${memoryMode === 'full' ? '全量' : '窗口(最近20条)'}`;
-            setTimeout(() => { if (statusShort.textContent.includes('记忆摘要')) statusShort.textContent = '就绪'; }, 2000);
-        });
-
-        // 显示思考过程
+        // ===== 显示思考过程 =====
         settingsShowReasoning.addEventListener('click', () => {
             showReasoning = !showReasoning;
             localStorage.setItem(SHOW_REASONING_KEY, String(showReasoning));
             updateShowReasoningUI();
             renderChat();
             statusShort.textContent = showReasoning ? '思考过程已显示' : '思考过程已隐藏';
-            setTimeout(() => { if (statusShort.textContent.includes('思考过程')) statusShort.textContent = '就绪'; }, 1500);
+            setTimeout(() => { if (statusShort.textContent.includes('思考过程')) statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
         });
 
-        // 显示字符计数
+        // ===== 显示字符计数 =====
         settingsShowChars.addEventListener('click', () => {
             showChars = !showChars;
             localStorage.setItem(SHOW_CHARS_KEY, String(showChars));
@@ -2464,15 +2654,15 @@
             updateCharCounter();
         });
 
-        // 显示Token计数
+        // ===== 显示Token计数 =====
         settingsShowTokens.addEventListener('click', () => {
             showTokens = !showTokens;
             localStorage.setItem(SHOW_TOKENS_KEY, String(showTokens));
             updateShowTokensUI();
-            updateTokenCounter();
+            updateConvStatus();
         });
 
-        // 备份 & 恢复
+        // ===== 备份 & 恢复 =====
         function backupData() {
             try {
                 const data = {
@@ -2496,13 +2686,13 @@
                 const a = document.createElement('a');
                 a.href = url;
                 const dateStr = new Date().toISOString().slice(0,10);
-                a.download = `My_ds_备份_${dateStr}.json`;
+                a.download = `My_DeepSeek_备份_${dateStr}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 statusShort.textContent = '✅ 备份成功！';
-                setTimeout(() => { if (statusShort.textContent === '✅ 备份成功！') statusShort.textContent = '就绪'; }, 3000);
+                setTimeout(() => { if (statusShort.textContent === '✅ 备份成功！') statusShort.textContent = '就绪'; updateConvStatus(); }, 3000);
             } catch (e) { alert('备份失败：' + e.message); }
         }
 
@@ -2522,8 +2712,9 @@
                     }
                     if (data.mode) {
                         mode = data.mode;
+                        pendingMode = mode;
                         localStorage.setItem(MODE_KEY, mode);
-                        settingsModeSelect.value = mode;
+                        settingsModeSelect ? null : null;
                         updateModeUI();
                     }
                     if (data.deepThinking !== undefined) {
@@ -2554,8 +2745,9 @@
                     }
                     if (data.memoryMode) {
                         memoryMode = data.memoryMode;
+                        pendingMemory = memoryMode;
                         localStorage.setItem(MEMORY_MODE_KEY, memoryMode);
-                        settingsMemoryMode.value = memoryMode;
+                        updateMemoryUI();
                     }
                     const active = sessions.find(s => s.active) || sessions[0];
                     if (active) { currentId = active.id; }
@@ -2569,6 +2761,7 @@
                     updateCharCounter();
                     statusShort.textContent = '✅ 恢复成功！';
                     alert('✅ 恢复成功！所有数据已还原。');
+                    updateConvStatus();
                 } catch (err) {
                     alert('恢复失败：' + err.message);
                 }
@@ -2595,7 +2788,7 @@
             localStorage.setItem(DEEP_THINKING_KEY, String(deepThinking));
             updateDeepThinkingUI();
             statusShort.textContent = deepThinking ? '深度思考已开启 (高费用)' : '深度思考已关闭 (低费用)';
-            setTimeout(() => { if (statusShort.textContent.includes('深度思考')) statusShort.textContent = '就绪'; }, 2000);
+            setTimeout(() => { if (statusShort.textContent.includes('深度思考')) statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
         });
 
         // ============================================================
@@ -2707,6 +2900,7 @@
         renderChat();
         updateCharCounter();
         statusShort.textContent = '就绪';
+        updateConvStatus();
         updateStorageInfo();
         setInterval(updateStorageInfo, 30000);
     </script>

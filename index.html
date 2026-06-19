@@ -795,7 +795,7 @@
             background: var(--bg-surface);
             padding: 24px 28px;
             border-radius: var(--radius-lg);
-            max-width: 300px;
+            max-width: 320px;
             width: 90%;
             text-align: center;
             box-shadow: var(--shadow-heavy);
@@ -1530,6 +1530,7 @@
                     if (ver.assistantContent) {
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
+                        // 仅当有推理内容且显示选项开启时才显示
                         if (ver.reasoning && showReasoning) {
                             const details = document.createElement('details');
                             details.className = 'reasoning-box';
@@ -1690,7 +1691,6 @@
                 const newTurn = session.turns[turnIdx];
                 const newVer = newTurn.versions[newTurn.currentVersionIndex];
                 if (!newVer) return;
-                // 继续用 newVer 进行流式请求
                 await performStreamRequest(session, turnIdx, newVer);
                 return;
             }
@@ -1734,11 +1734,11 @@
                 max_tokens: 4096,
                 temperature: 0.7,
             };
+            // 【关键修正】只有开启深度思考时才设置 reasoning_effort
             if (deepThinking) {
                 requestBody.reasoning_effort = 'high';
-            } else {
-                requestBody.reasoning_effort = 'low';
             }
+            // 如果关闭深度思考，则不发送 reasoning_effort 字段，避免返回推理内容
 
             try {
                 isStreaming = true;
@@ -1769,10 +1769,9 @@
                 let fullContent = '';
                 let reasoningContent = '';
 
-                // 清空旧的 assistant 内容（如果有）
                 ver.assistantContent = '';
                 ver.reasoning = '';
-                ver._loading = true; // 保持加载状态
+                ver._loading = true;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1791,7 +1790,7 @@
                                     if (delta.content) {
                                         fullContent += delta.content;
                                         ver.assistantContent = fullContent;
-                                        renderChat(); // 实时更新
+                                        renderChat();
                                         chatBox.scrollTop = chatBox.scrollHeight;
                                     }
                                     if (delta.reasoning_content) {
@@ -1806,7 +1805,6 @@
                     }
                 }
 
-                // 完成
                 ver._loading = false;
                 saveSessions();
                 renderChat();
@@ -1868,7 +1866,6 @@
                 }
             }
 
-            // 简化：只处理文本消息，附件暂只作展示
             const userContent = text || '(文件上传)';
 
             // 创建新回合
@@ -1887,13 +1884,11 @@
             saveSessions();
             renderChat();
 
-            // 清空输入
             promptInput.value = '';
             promptInput.style.height = 'auto';
             pendingAttachments = [];
             renderAttachmentBar();
 
-            // 开始生成
             await regenerateMessage(turnIdx);
         }
 
@@ -1967,7 +1962,6 @@
                     };
                     reader.readAsDataURL(file);
                 } else {
-                    // 非图片文件简单记录，实际可调用DeepSeek文件接口
                     pendingAttachments.push({ type: 'file', data: file.name, name: file.name });
                     renderAttachmentBar();
                 }
@@ -2654,7 +2648,7 @@
         function closeSearch() { searchModal.classList.remove('active'); }
 
         // ============================================================
-        // 导出当前对话
+        // 导出当前对话（三选项）
         // ============================================================
         function exportChat(role) {
             const session = getCurrentSession();

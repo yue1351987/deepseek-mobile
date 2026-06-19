@@ -1410,7 +1410,6 @@
                     t.inputVersions.forEach(iv => {
                         if (!iv.outputVersions) iv.outputVersions = [];
                         if (iv.selectedOutputIdx === undefined) iv.selectedOutputIdx = 0;
-                        // 给每个输出版本增加 interrupted 字段
                         iv.outputVersions.forEach(ov => {
                             if (ov.interrupted === undefined) ov.interrupted = false;
                         });
@@ -1630,7 +1629,7 @@
                         });
                         assistantActions.appendChild(regenBtn);
 
-                        // 【新增】如果该输出被中断，显示继续生成按钮
+                        // 【继续生成按钮】条件：中断标记 && 未在加载 && 未在流式
                         if (ov.interrupted && !ov._loading && !isStreaming) {
                             const continueBtn = document.createElement('button');
                             continueBtn.className = 'continue-btn';
@@ -1850,7 +1849,6 @@
             const ov = iv.outputVersions[ovIdx];
             if (!ov || !ov.content) return;
 
-            // 清除中断标记，重新进入加载状态
             ov.interrupted = false;
             ov._loading = true;
             saveSessions();
@@ -1861,9 +1859,9 @@
         }
 
         // ============================================================
-        // 增量更新流式消息（支持追加模式）
+        // 增量更新流式消息（直接传入完整内容）
         // ============================================================
-        function updateStreamingMessage(turnIdx, content, reasoning, appendMode) {
+        function updateStreamingMessage(turnIdx, fullContent, reasoning) {
             const turnWrappers = chatBox.querySelectorAll('.turn-wrapper');
             const targetTurn = turnWrappers[turnIdx];
             if (!targetTurn) return;
@@ -1887,16 +1885,11 @@
                 assistantWrap.appendChild(msgDiv);
             }
 
-            // 如果是追加模式，将内容拼接到现有文本之后，否则直接替换
-            if (appendMode) {
-                const currentText = msgDiv.textContent || '';
-                msgDiv.textContent = currentText + (content || '');
-            } else {
-                msgDiv.textContent = content || ' ';
-            }
+            // 直接设置完整内容（不再追加，因为 fullContent 已累积完整）
+            msgDiv.textContent = fullContent || ' ';
 
-            // 处理思考过程（类似）
-            if (reasoning !== undefined && reasoning.length > 0) {
+            // 处理思考过程
+            if (reasoning && reasoning.length > 0) {
                 let reasonBox = assistantWrap.querySelector('.reasoning-box');
                 if (!reasonBox) {
                     reasonBox = document.createElement('details');
@@ -1911,11 +1904,7 @@
                 }
                 const contentDiv = reasonBox.querySelector('.reasoning-content');
                 if (contentDiv) {
-                    if (appendMode) {
-                        contentDiv.textContent += reasoning;
-                    } else {
-                        contentDiv.textContent = reasoning;
-                    }
+                    contentDiv.textContent = reasoning;
                 }
                 if (!deepThinking) {
                     reasonBox.style.display = 'none';
@@ -1928,7 +1917,7 @@
         }
 
         // ============================================================
-        // 执行流式请求（支持追加模式）
+        // 执行流式请求（支持追加模式，但更新时传入完整内容）
         // ============================================================
         async function performStreamRequest(session, turnIdx, inputVersion, outputVersion, appendMode) {
             const key = localStorage.getItem(KEY_STORAGE);
@@ -1959,12 +1948,8 @@
             // 当前用户消息
             history.push({ role: 'user', content: inputVersion.content });
 
-            // 如果是追加模式，需要把已有的 assistant 内容作为历史的一部分，以便 AI 续写
-            // 但注意：历史中已经包含之前的完整对话，当前 turn 的 assistant 内容尚未加入历史，但我们需要告诉 AI 我们已经生成了一部分。
-            // 更好的方式：在消息列表中，将已生成的内容作为 assistant 消息，然后追加一条用户消息“继续生成”。
-            // 但这样可能会打乱历史结构。简便方法：在历史中插入一条 assistant 消息，内容为已生成的部分，然后追加一条 user 消息“继续”。
+            // 如果是追加模式，将已生成的内容作为 assistant 消息插入历史，并追加一个“继续”指令
             if (appendMode && outputVersion.content) {
-                // 将已生成的内容作为 assistant 消息插入历史
                 history.push({ role: 'assistant', content: outputVersion.content });
                 history.push({ role: 'user', content: '继续生成' });
             }
@@ -2009,10 +1994,11 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
-                let fullContent = outputVersion.content || ''; // 保留已有内容
+                // 完整内容初始值
+                let fullContent = outputVersion.content || '';
                 let reasoningContent = outputVersion.reasoning || '';
 
-                // 如果追加模式，已有内容保留，否则清空
+                // 如果不是追加模式，清空已有内容
                 if (!appendMode) {
                     fullContent = '';
                     reasoningContent = '';
@@ -2037,12 +2023,13 @@
                                     if (delta.content) {
                                         fullContent += delta.content;
                                         outputVersion.content = fullContent;
-                                        updateStreamingMessage(turnIdx, delta.content, reasoningContent, appendMode);
+                                        // 传入完整内容
+                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent);
                                     }
                                     if (delta.reasoning_content && deepThinking) {
                                         reasoningContent += delta.reasoning_content;
                                         outputVersion.reasoning = reasoningContent;
-                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent, appendMode);
+                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent);
                                     }
                                 }
                             } catch (e) { /* ignore */ }
@@ -2074,9 +2061,8 @@
                 if (error.name === 'AbortError') {
                     outputVersion._loading = false;
                     outputVersion.interrupted = true;
-                    // 保留已生成内容
                     saveSessions();
-                    renderChat();
+                    renderChat(); // 重新渲染，显示继续按钮
                     statusShort.textContent = '⏹ 已停止 (可继续生成)';
                     setTimeout(() => { if (statusShort.textContent === '⏹ 已停止 (可继续生成)') statusShort.textContent = '就绪'; updateConvStatus(); }, 3000);
                 } else {

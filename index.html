@@ -56,10 +56,13 @@
         }
         #menuBtn { font-size: 22px; background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0 4px; }
         #titleArea { flex: 1; text-align: center; font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30%; }
+        #modelIndicator { font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--bg-primary); padding: 2px 10px; border-radius: 20px; border: 1px solid var(--border-color); white-space: nowrap; }
         .topbar-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 2px 5px; }
         .topbar-btn:active { color: var(--text-primary); }
         #controls { display: flex; align-items: center; gap: 6px; background: var(--bg-primary); padding: 2px 10px 2px 6px; border-radius: 30px; border: 1px solid var(--border-color); }
         #controls select { background: transparent; border: none; color: var(--text-primary); font-size: 12px; font-weight: 600; outline: none; padding: 2px 0; cursor: pointer; }
+        #reasoningToggle { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 2px; opacity: 0.6; }
+        #reasoningToggle.active { opacity: 1; color: #4a6cf7; }
         #darkToggle { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 2px; }
         #keyBar { display: flex; gap: 4px; padding: 4px 10px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); flex-shrink: 0; align-items: center; }
         #apiKey { flex: 1; padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 11px; background: var(--bg-secondary); color: var(--text-primary); outline: none; }
@@ -167,11 +170,13 @@
     <div id="topbar">
         <button id="menuBtn">☰</button>
         <span id="titleArea">新对话</span>
+        <span id="modelIndicator">⚡ Flash</span>
         <div id="controls">
             <select id="modelSelect">
                 <option value="deepseek-v4-flash">⚡ V4 Flash</option>
                 <option value="deepseek-v4-pro">🧠 V4 Pro</option>
             </select>
+            <button id="reasoningToggle" class="active" title="显示/隐藏思考过程">🧠</button>
             <button id="darkToggle">🌙</button>
         </div>
         <button class="topbar-btn" id="backupBtn" title="备份所有数据">💾</button>
@@ -233,7 +238,7 @@
 
     <script>
         // ============================================================
-        //  数据层 (新增 folders, 修改 sessions 结构)
+        //  数据层
         // ============================================================
         let sessions = [];
         let folders = [];
@@ -242,12 +247,14 @@
         let pendingAttachments = [];
         let isStreaming = false;
         let abortController = null;
+        let showReasoning = true; // 新增：控制是否显示思考过程
 
         const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v4';
         const STORAGE_FOLDERS_KEY = 'deepseek_folders_v4';
         const KEY_STORAGE = 'deepseek_api_key';
         const THEME_KEY = 'deepseek_theme';
         const MODEL_KEY = 'deepseek_model';
+        const REASONING_KEY = 'deepseek_reasoning';
 
         // DOM 引用
         const chatBox = document.getElementById('chatBox');
@@ -257,6 +264,7 @@
         const apiKeyInput = document.getElementById('apiKey');
         const saveKeyBtn = document.getElementById('saveKeyBtn');
         const titleArea = document.getElementById('titleArea');
+        const modelIndicator = document.getElementById('modelIndicator');
         const menuBtn = document.getElementById('menuBtn');
         const newChatBtn = document.getElementById('newChatBtn');
         const drawer = document.getElementById('drawer');
@@ -277,6 +285,7 @@
         const closeSearchBtn = document.getElementById('closeSearchBtn');
         const modelSelect = document.getElementById('modelSelect');
         const darkToggle = document.getElementById('darkToggle');
+        const reasoningToggle = document.getElementById('reasoningToggle');
         const exportBtn = document.getElementById('exportBtn');
         const exportModal = document.getElementById('exportModal');
         const closeExportBtn = document.getElementById('closeExportBtn');
@@ -307,13 +316,22 @@
             // Model
             const model = localStorage.getItem(MODEL_KEY);
             if (model) modelSelect.value = model;
+            updateModelIndicator();
+            // Reasoning
+            const reasoning = localStorage.getItem(REASONING_KEY);
+            if (reasoning === 'false') {
+                showReasoning = false;
+                reasoningToggle.classList.remove('active');
+            } else {
+                showReasoning = true;
+                reasoningToggle.classList.add('active');
+            }
             // Folders
             const rawFolders = localStorage.getItem(STORAGE_FOLDERS_KEY);
             if (rawFolders) { try { folders = JSON.parse(rawFolders); } catch { folders = []; } }
             // Sessions
             const rawSessions = localStorage.getItem(STORAGE_SESSIONS_KEY);
             if (rawSessions) { try { sessions = JSON.parse(rawSessions); } catch { sessions = []; } }
-            // 如果没有会话，创建一个默认
             if (!sessions.length) {
                 sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false });
                 saveSessions();
@@ -339,8 +357,15 @@
             tokenCounter.textContent = `📊 ~${total} tokens`;
         }
 
+        function updateModelIndicator() {
+            const val = modelSelect.value;
+            if (val === 'deepseek-v4-flash') modelIndicator.textContent = '⚡ Flash';
+            else if (val === 'deepseek-v4-pro') modelIndicator.textContent = '🧠 Pro';
+            else modelIndicator.textContent = '🤖 AI';
+        }
+
         // ============================================================
-        //  渲染聊天 (与之前一致)
+        //  渲染聊天 (与之前一致，增加推理显示控制)
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -362,7 +387,8 @@
                     wrap.className = `msg-wrapper ${msg.role}`;
                     wrap.dataset.index = i;
 
-                    if (msg.role === 'assistant' && msg.reasoning) {
+                    // 思考过程：仅在开启显示且有内容时渲染
+                    if (msg.role === 'assistant' && msg.reasoning && showReasoning) {
                         const details = document.createElement('details');
                         details.className = 'reasoning-box';
                         const summary = document.createElement('summary');
@@ -459,7 +485,7 @@
             msg.historyIndex = idx;
 
             if (idx === 0) {
-                // 当前版本，无需恢复
+                // current
             } else {
                 const histItem = msg.history[idx - 1];
                 if (histItem) {
@@ -478,7 +504,7 @@
         }
 
         // ============================================================
-        //  编辑、重新生成 (与之前相同，略)
+        //  编辑、重新生成 (省略，沿用之前的逻辑，无改动)
         // ============================================================
         function editUserMessage(index) {
             const session = getCurrentSession();
@@ -575,14 +601,192 @@
         }
 
         // ============================================================
-        //  发送消息 (流式) - 与之前一致，省略以节省篇幅，功能完全保留
-        //  实际使用时需要包含完整 sendMessage 函数，但此处为了代码完整性，我会在最终版本中保留。
-        //  由于代码过长，此处仅作示意，最终完整代码我会在回答末尾提供。
+        //  发送消息 (流式，集成显示思考开关)
         // ============================================================
-        // （为了节省篇幅，此处省略 sendMessage 等函数，但最终完整代码会包含所有功能）
+        async function sendMessage() {
+            if (isStreaming) return;
+            const key = localStorage.getItem(KEY_STORAGE);
+            if (!key) { alert('请先保存 API Key'); return; }
+            const text = promptInput.value.trim();
+            if (!text && pendingAttachments.length === 0) { alert('请输入问题或上传文件'); return; }
+
+            const session = getCurrentSession();
+            if (!session) { createNewSession(); }
+
+            let userContent = text || '请分析上传的文件内容';
+            const images = [];
+            const fileIds = [];
+            for (const att of pendingAttachments) {
+                if (att.type === 'image') images.push(att.data);
+                else if (att.type === 'file') fileIds.push(att.data);
+            }
+            let finalUserMsg;
+            if (images.length > 0) {
+                const contentArray = [{ type: 'text', text: userContent }];
+                images.forEach(img => { contentArray.push({ type: 'image_url', image_url: { url: img } }); });
+                finalUserMsg = contentArray;
+            } else {
+                finalUserMsg = userContent;
+            }
+
+            const localMsg = { role: 'user', content: text || '📎 文件上传请求' };
+            if (images.length > 0) localMsg.images = images;
+            session.messages.push(localMsg);
+            saveSessions();
+            renderChat();
+
+            promptInput.value = '';
+            promptInput.style.height = 'auto';
+            pendingAttachments = [];
+            renderAttachmentBar();
+            sendBtn.disabled = true;
+            stopBtn.style.display = 'flex';
+            isStreaming = true;
+            statusText.textContent = '⏳ 流式生成中...';
+
+            abortController = new AbortController();
+
+            const aiMsgIndex = session.messages.length;
+            session.messages.push({ role: 'assistant', content: '', reasoning: '', _loading: true });
+            saveSessions();
+            
+            const wrap = document.createElement('div');
+            wrap.className = 'msg-wrapper assistant';
+            
+            // 思考过程容器：仅当 showReasoning 为 true 时创建
+            let details = null, reasoningDiv = null, summary = null;
+            if (showReasoning) {
+                details = document.createElement('details');
+                details.className = 'reasoning-box';
+                details.open = true;
+                summary = document.createElement('summary');
+                summary.textContent = '🧠 思考过程中...';
+                details.appendChild(summary);
+                reasoningDiv = document.createElement('div');
+                reasoningDiv.className = 'reasoning-content';
+                reasoningDiv.textContent = '';
+                details.appendChild(reasoningDiv);
+                wrap.appendChild(details);
+            }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg';
+            msgDiv.textContent = '';
+            msgDiv.classList.add('cursor-blink');
+            wrap.appendChild(msgDiv);
+            chatBox.appendChild(wrap);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            let fullReasoning = '';
+            let fullContent = '';
+
+            try {
+                const apiMessages = session.messages.filter(m => !m._loading && m.content).map(m => ({ role: m.role, content: m.content }));
+                const body = {
+                    model: modelSelect.value,
+                    messages: apiMessages,
+                    stream: true,
+                    max_tokens: 4096
+                };
+                if (fileIds.length > 0) body.file_ids = fileIds;
+
+                const response = await fetch('https://api.deepseek.com/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify(body),
+                    signal: abortController.signal
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(`API错误(${response.status}): ${errData.error?.message || '请检查Key'}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const payload = line.slice(6).trim();
+                            if (payload === '[DONE]') continue;
+                            try {
+                                const json = JSON.parse(payload);
+                                const delta = json.choices?.[0]?.delta;
+                                if (delta) {
+                                    if (delta.reasoning_content && showReasoning && reasoningDiv) {
+                                        fullReasoning += delta.reasoning_content;
+                                        reasoningDiv.textContent = fullReasoning;
+                                        reasoningDiv.scrollTop = reasoningDiv.scrollHeight;
+                                    }
+                                    if (delta.content) {
+                                        fullContent += delta.content;
+                                        msgDiv.textContent = fullContent;
+                                        chatBox.scrollTop = chatBox.scrollHeight;
+                                    }
+                                }
+                            } catch (e) { /* 忽略 */ }
+                        }
+                    }
+                }
+
+                const savedMsg = session.messages[aiMsgIndex];
+                if (savedMsg) {
+                    savedMsg.content = fullContent || '(空回复)';
+                    savedMsg.reasoning = showReasoning ? fullReasoning : '';
+                    savedMsg._loading = false;
+                }
+                saveSessions();
+                if (details) {
+                    details.open = false;
+                    if (summary) summary.textContent = '🧠 思考过程 (点击展开)';
+                }
+                msgDiv.classList.remove('cursor-blink');
+                renderChat();
+                statusText.textContent = '✅ 回复完成';
+
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    const savedMsg = session.messages[aiMsgIndex];
+                    if (savedMsg) {
+                        savedMsg.content = fullContent || '(已停止)';
+                        savedMsg.reasoning = showReasoning ? fullReasoning : '';
+                        savedMsg._loading = false;
+                    }
+                    saveSessions();
+                    renderChat();
+                    statusText.textContent = '⏹ 已停止生成';
+                } else {
+                    session.messages.pop();
+                    session.messages.push({ role: 'assistant', content: `❌ 出错：${error.message}`, reasoning: showReasoning ? (fullReasoning || '出错前思考') : '' });
+                    saveSessions();
+                    renderChat();
+                    statusText.textContent = '⚠️ 请求失败';
+                }
+            } finally {
+                sendBtn.disabled = false;
+                stopBtn.style.display = 'none';
+                isStreaming = false;
+                abortController = null;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        stopBtn.addEventListener('click', () => {
+            if (abortController) {
+                abortController.abort();
+                statusText.textContent = '⏹ 正在停止...';
+            }
+        });
 
         // ============================================================
-        //  附件管理 (与之前一致)
+        //  附件管理
         // ============================================================
         function renderAttachmentBar() {
             attachmentBar.innerHTML = '';
@@ -644,16 +848,12 @@
         });
 
         // ============================================================
-        //  文件夹 & 对话管理 (新增)
+        //  文件夹 & 会话管理 (完整)
         // ============================================================
         function createFolder() {
             const name = prompt('请输入文件夹名称：', '新文件夹');
             if (!name || name.trim() === '') return;
-            const folder = {
-                id: generateId(),
-                name: name.trim(),
-                pinned: false
-            };
+            const folder = { id: generateId(), name: name.trim(), pinned: false };
             folders.push(folder);
             saveSessions();
             renderDrawer();
@@ -672,25 +872,15 @@
 
         function toggleFolderPin(folderId) {
             const folder = folders.find(f => f.id === folderId);
-            if (folder) {
-                folder.pinned = !folder.pinned;
-                saveSessions();
-                renderDrawer();
-            }
+            if (folder) { folder.pinned = !folder.pinned; saveSessions(); renderDrawer(); }
         }
 
         function deleteFolder(folderId) {
             const folder = folders.find(f => f.id === folderId);
             if (!folder) return;
             const confirmText = prompt(`⚠️ 确定要删除文件夹“${folder.name}”吗？\n其中的对话将移至“未分类”。\n请输入“确认删除”以继续：`);
-            if (confirmText !== '确认删除') {
-                alert('删除已取消');
-                return;
-            }
-            // 将该文件夹下的对话移出（folderId设为null）
-            sessions.forEach(s => {
-                if (s.folderId === folderId) s.folderId = null;
-            });
+            if (confirmText !== '确认删除') { alert('删除已取消'); return; }
+            sessions.forEach(s => { if (s.folderId === folderId) s.folderId = null; });
             folders = folders.filter(f => f.id !== folderId);
             saveSessions();
             renderDrawer();
@@ -698,30 +888,17 @@
 
         function toggleSessionPin(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
-            if (session) {
-                session.pinned = !session.pinned;
-                saveSessions();
-                renderDrawer();
-            }
+            if (session) { session.pinned = !session.pinned; saveSessions(); renderDrawer(); }
         }
 
         function deleteSessionWithConfirm(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
             if (!session) return;
-            if (sessions.length <= 1) {
-                alert('至少保留一个对话');
-                return;
-            }
+            if (sessions.length <= 1) { alert('至少保留一个对话'); return; }
             const confirmText = prompt(`⚠️ 确定要删除对话“${session.name}”吗？\n请输入“确认删除”以继续：`);
-            if (confirmText !== '确认删除') {
-                alert('删除已取消');
-                return;
-            }
+            if (confirmText !== '确认删除') { alert('删除已取消'); return; }
             sessions = sessions.filter(s => s.id !== sessionId);
-            if (currentId === sessionId) {
-                currentId = sessions[0].id;
-                sessions[0].active = true;
-            }
+            if (currentId === sessionId) { currentId = sessions[0].id; sessions[0].active = true; }
             saveSessions();
             renderChat();
             renderDrawer();
@@ -729,31 +906,21 @@
 
         function moveSessionToFolder(sessionId, folderId) {
             const session = sessions.find(s => s.id === sessionId);
-            if (session) {
-                session.folderId = folderId;
-                saveSessions();
-                renderDrawer();
-            }
+            if (session) { session.folderId = folderId; saveSessions(); renderDrawer(); }
         }
 
         // ============================================================
-        //  渲染抽屉 (支持文件夹、置顶、二次确认删除)
+        //  渲染抽屉 (修复笔误)
         // ============================================================
         function renderDrawer() {
             sessionListContainer.innerHTML = '';
 
-            // 获取当前选中的会话ID
             const currentSessionId = currentId;
-
-            // 分离置顶和非置顶项
             const pinnedFolders = folders.filter(f => f.pinned);
             const unpinnedFolders = folders.filter(f => !f.pinned);
             const pinnedSessions = sessions.filter(s => s.pinned && !s.folderId);
             const unpinnedSessions = sessions.filter(s => !s.pinned && !s.folderId);
-            // 文件夹内的会话按文件夹分组（每个文件夹单独显示）
-            // 为了简洁，我们展示所有文件夹，并在其中列出其会话
 
-            // 辅助函数：创建会话项DOM
             function createSessionItem(session) {
                 const div = document.createElement('div');
                 div.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
@@ -769,13 +936,11 @@
                 const actions = document.createElement('div');
                 actions.className = 'item-actions';
 
-                // 移动按钮（移到其他文件夹或未分类）
                 const moveBtn = document.createElement('button');
                 moveBtn.textContent = '📂';
                 moveBtn.title = '移动到文件夹';
                 moveBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // 弹出选择文件夹对话框
                     const folderOptions = folders.map(f => `${f.name} (${f.id})`).join('\n');
                     const choice = prompt(`选择目标文件夹 (输入文件夹ID，留空则移到未分类)：\n${folderOptions}\n\n当前对话: ${session.name}`);
                     if (choice === null) return;
@@ -784,35 +949,24 @@
                 });
                 actions.appendChild(moveBtn);
 
-                // 置顶切换
                 const pinBtn = document.createElement('button');
                 pinBtn.textContent = session.pinned ? '📌' : '📍';
                 pinBtn.title = '切换置顶';
-                pinBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleSessionPin(session.id);
-                });
+                pinBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleSessionPin(session.id); });
                 actions.appendChild(pinBtn);
 
-                // 删除
                 const delBtn = document.createElement('button');
                 delBtn.textContent = '🗑️';
                 delBtn.title = '删除对话';
-                delBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    deleteSessionWithConfirm(session.id);
-                });
+                delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteSessionWithConfirm(session.id); });
                 actions.appendChild(delBtn);
 
                 div.appendChild(nameSpan);
                 div.appendChild(actions);
-                div.addEventListener('click', () => {
-                    switchSession(session.id);
-                });
+                div.addEventListener('click', () => { switchSession(session.id); });
                 return div;
             }
 
-            // 辅助函数：创建文件夹DOM（含子会话）
             function createFolderItem(folder) {
                 const container = document.createElement('div');
                 container.className = 'folder-container';
@@ -833,32 +987,20 @@
                 }
                 const actions = document.createElement('div');
                 actions.className = 'item-actions';
-                // 重命名
                 const renameBtn = document.createElement('button');
                 renameBtn.textContent = '✏️';
                 renameBtn.title = '重命名文件夹';
-                renameBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    renameFolder(folder.id);
-                });
+                renameBtn.addEventListener('click', (e) => { e.stopPropagation(); renameFolder(folder.id); });
                 actions.appendChild(renameBtn);
-                // 置顶切换
                 const pinBtn = document.createElement('button');
                 pinBtn.textContent = folder.pinned ? '📌' : '📍';
                 pinBtn.title = '切换置顶';
-                pinBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleFolderPin(folder.id);
-                });
+                pinBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFolderPin(folder.id); });
                 actions.appendChild(pinBtn);
-                // 删除文件夹
                 const delBtn = document.createElement('button');
                 delBtn.textContent = '🗑️';
                 delBtn.title = '删除文件夹';
-                delBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    deleteFolder(folder.id);
-                });
+                delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteFolder(folder.id); });
                 actions.appendChild(delBtn);
 
                 folderDiv.appendChild(icon);
@@ -866,16 +1008,12 @@
                 folderDiv.appendChild(actions);
                 container.appendChild(folderDiv);
 
-                // 子会话列表
                 const childSessions = sessions.filter(s => s.folderId === folder.id);
                 if (childSessions.length > 0) {
                     const childrenDiv = document.createElement('div');
                     childrenDiv.className = 'folder-children';
-                    // 按置顶排序
                     const sorted = [...childSessions].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-                    sorted.forEach(s => {
-                        childrenDiv.appendChild(createSessionItem(s));
-                    });
+                    sorted.forEach(s => { childrenDiv.appendChild(createSessionItem(s)); });
                     container.appendChild(childrenDiv);
                 } else {
                     const empty = document.createElement('div');
@@ -892,45 +1030,33 @@
                 title.className = 'drawer-section-title';
                 title.textContent = '📌 置顶文件夹';
                 sessionListContainer.appendChild(title);
-                pinnedFolders.forEach(f => {
-                    sessionListContainer.appendChild(createFolderItem(f));
-                });
+                pinnedFolders.forEach(f => { sessionListContainer.appendChild(createFolderItem(f)); });
             }
 
-            // 显示置顶对话（未分类）
             if (pinnedSessions.length) {
                 const title = document.createElement('div');
                 title.className = 'drawer-section-title';
                 title.textContent = '📌 置顶对话';
                 sessionListContainer.appendChild(title);
-                pinnedSessions.forEach(s => {
-                    sessionListContainer.appendChild(createSessionItem(s));
-                });
+                pinnedSessions.forEach(s => { sessionListContainer.appendChild(createSessionItem(s)); });
             }
 
-            // 显示普通文件夹
             if (unpinnedFolders.length) {
                 const title = document.createElement('div');
                 title.className = 'drawer-section-title';
                 title.textContent = '📁 文件夹';
                 sessionListContainer.appendChild(title);
-                unpinnedFolders.forEach(f => {
-                    sessionListContainer.appendChild(createFolderItem(f));
-                });
+                unpinnedFolders.forEach(f => { sessionListContainer.appendChild(createFolderItem(f)); });
             }
 
-            // 显示普通对话（未分类）
             if (unpinnedSessions.length) {
                 const title = document.createElement('div');
-                className = 'drawer-section-title';
+                title.className = 'drawer-section-title'; // 修复笔误
                 title.textContent = '💬 对话';
                 sessionListContainer.appendChild(title);
-                unpinnedSessions.forEach(s => {
-                    sessionListContainer.appendChild(createSessionItem(s));
-                });
+                unpinnedSessions.forEach(s => { sessionListContainer.appendChild(createSessionItem(s)); });
             }
 
-            // 如果没有任何内容，显示提示
             if (sessions.length === 0 && folders.length === 0) {
                 const empty = document.createElement('div');
                 empty.style.cssText = 'color:var(--text-muted);text-align:center;padding:30px 0;';
@@ -957,14 +1083,7 @@
 
         function createNewSession() {
             const count = sessions.length + 1;
-            const newSession = {
-                id: generateId(),
-                name: `对话 ${count}`,
-                messages: [],
-                folderId: null,
-                pinned: false,
-                active: true
-            };
+            const newSession = { id: generateId(), name: `对话 ${count}`, messages: [], folderId: null, pinned: false, active: true };
             sessions.forEach(s => delete s.active);
             sessions.push(newSession);
             currentId = newSession.id;
@@ -974,9 +1093,6 @@
             promptInput.focus();
         }
 
-        // ============================================================
-        //  抽屉开关
-        // ============================================================
         function openDrawer() { renderDrawer(); overlay.classList.add('active'); drawer.classList.add('open'); }
         function closeDrawer() { overlay.classList.remove('active'); drawer.classList.remove('open'); }
         menuBtn.addEventListener('click', openDrawer);
@@ -998,18 +1114,32 @@
         });
 
         // ============================================================
-        //  Key 保存, 模型, 深色
+        //  Key, Model, Theme, Reasoning Toggle
         // ============================================================
         saveKeyBtn.addEventListener('click', () => {
             const key = apiKeyInput.value.trim();
             if (key) { localStorage.setItem(KEY_STORAGE, key); currentKey = key; alert('✅ Key 已保存'); } else { alert('请输入 Key'); }
         });
-        modelSelect.addEventListener('change', () => { localStorage.setItem(MODEL_KEY, modelSelect.value); });
+        modelSelect.addEventListener('change', () => { 
+            localStorage.setItem(MODEL_KEY, modelSelect.value); 
+            updateModelIndicator();
+        });
         darkToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark');
             const isDark = document.body.classList.contains('dark');
             localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
             darkToggle.textContent = isDark ? '☀️' : '🌙';
+        });
+
+        // 推理开关
+        reasoningToggle.addEventListener('click', () => {
+            showReasoning = !showReasoning;
+            reasoningToggle.classList.toggle('active');
+            localStorage.setItem(REASONING_KEY, String(showReasoning));
+            statusText.textContent = showReasoning ? '🧠 思考过程已开启' : '🧠 思考过程已隐藏';
+            setTimeout(() => { if (statusText.textContent.includes('思考过程')) statusText.textContent = '就绪'; }, 1500);
+            // 重绘聊天以显示/隐藏已有的思考内容
+            renderChat();
         });
 
         // ============================================================
@@ -1068,6 +1198,7 @@
                     if (data.model) {
                         localStorage.setItem(MODEL_KEY, data.model);
                         modelSelect.value = data.model;
+                        updateModelIndicator();
                     }
                     const active = sessions.find(s => s.active) || sessions[0];
                     if (active) {
@@ -1165,7 +1296,7 @@
         function closeSearch() { searchModal.classList.remove('active'); }
 
         // ============================================================
-        //  导出 (与之前一致)
+        //  导出
         // ============================================================
         function exportChat(role) {
             const session = getCurrentSession();
@@ -1198,190 +1329,11 @@
         exportAll.addEventListener('click', () => exportChat('all'));
 
         // ============================================================
-        //  发送消息 (完整流式，集成停止)
-        // ============================================================
-        async function sendMessage() {
-            if (isStreaming) return;
-            const key = localStorage.getItem(KEY_STORAGE);
-            if (!key) { alert('请先保存 API Key'); return; }
-            const text = promptInput.value.trim();
-            if (!text && pendingAttachments.length === 0) { alert('请输入问题或上传文件'); return; }
-
-            const session = getCurrentSession();
-            if (!session) { createNewSession(); }
-
-            let userContent = text || '请分析上传的文件内容';
-            const images = [];
-            const fileIds = [];
-            for (const att of pendingAttachments) {
-                if (att.type === 'image') images.push(att.data);
-                else if (att.type === 'file') fileIds.push(att.data);
-            }
-            let finalUserMsg;
-            if (images.length > 0) {
-                const contentArray = [{ type: 'text', text: userContent }];
-                images.forEach(img => { contentArray.push({ type: 'image_url', image_url: { url: img } }); });
-                finalUserMsg = contentArray;
-            } else {
-                finalUserMsg = userContent;
-            }
-
-            const localMsg = { role: 'user', content: text || '📎 文件上传请求' };
-            if (images.length > 0) localMsg.images = images;
-            session.messages.push(localMsg);
-            saveSessions();
-            renderChat();
-
-            promptInput.value = '';
-            promptInput.style.height = 'auto';
-            pendingAttachments = [];
-            renderAttachmentBar();
-            sendBtn.disabled = true;
-            stopBtn.style.display = 'flex';
-            isStreaming = true;
-            statusText.textContent = '⏳ 流式生成中...';
-
-            abortController = new AbortController();
-
-            const aiMsgIndex = session.messages.length;
-            session.messages.push({ role: 'assistant', content: '', reasoning: '', _loading: true });
-            saveSessions();
-            
-            const wrap = document.createElement('div');
-            wrap.className = 'msg-wrapper assistant';
-            
-            const details = document.createElement('details');
-            details.className = 'reasoning-box';
-            details.open = true;
-            const summary = document.createElement('summary');
-            summary.textContent = '🧠 思考过程中...';
-            details.appendChild(summary);
-            const reasoningDiv = document.createElement('div');
-            reasoningDiv.className = 'reasoning-content';
-            reasoningDiv.textContent = '';
-            details.appendChild(reasoningDiv);
-            wrap.appendChild(details);
-
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'msg';
-            msgDiv.textContent = '';
-            msgDiv.classList.add('cursor-blink');
-            wrap.appendChild(msgDiv);
-            chatBox.appendChild(wrap);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            let fullReasoning = '';
-            let fullContent = '';
-
-            try {
-                const apiMessages = session.messages.filter(m => !m._loading && m.content).map(m => ({ role: m.role, content: m.content }));
-                const body = {
-                    model: modelSelect.value,
-                    messages: apiMessages,
-                    stream: true,
-                    max_tokens: 4096
-                };
-                if (fileIds.length > 0) body.file_ids = fileIds;
-
-                const response = await fetch('https://api.deepseek.com/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                    body: JSON.stringify(body),
-                    signal: abortController.signal
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(`API错误(${response.status}): ${errData.error?.message || '请检查Key'}`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const payload = line.slice(6).trim();
-                            if (payload === '[DONE]') continue;
-                            try {
-                                const json = JSON.parse(payload);
-                                const delta = json.choices?.[0]?.delta;
-                                if (delta) {
-                                    if (delta.reasoning_content) {
-                                        fullReasoning += delta.reasoning_content;
-                                        reasoningDiv.textContent = fullReasoning;
-                                        reasoningDiv.scrollTop = reasoningDiv.scrollHeight;
-                                    }
-                                    if (delta.content) {
-                                        fullContent += delta.content;
-                                        msgDiv.textContent = fullContent;
-                                        chatBox.scrollTop = chatBox.scrollHeight;
-                                    }
-                                }
-                            } catch (e) { /* 忽略 */ }
-                        }
-                    }
-                }
-
-                const savedMsg = session.messages[aiMsgIndex];
-                if (savedMsg) {
-                    savedMsg.content = fullContent || '(空回复)';
-                    savedMsg.reasoning = fullReasoning || '';
-                    savedMsg._loading = false;
-                }
-                saveSessions();
-                details.open = false;
-                summary.textContent = '🧠 思考过程 (点击展开)';
-                msgDiv.classList.remove('cursor-blink');
-                renderChat();
-                statusText.textContent = '✅ 回复完成';
-
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    const savedMsg = session.messages[aiMsgIndex];
-                    if (savedMsg) {
-                        savedMsg.content = fullContent || '(已停止)';
-                        savedMsg.reasoning = fullReasoning || '';
-                        savedMsg._loading = false;
-                    }
-                    saveSessions();
-                    renderChat();
-                    statusText.textContent = '⏹ 已停止生成';
-                } else {
-                    session.messages.pop();
-                    session.messages.push({ role: 'assistant', content: `❌ 出错：${error.message}`, reasoning: fullReasoning || '出错前思考' });
-                    saveSessions();
-                    renderChat();
-                    statusText.textContent = '⚠️ 请求失败';
-                }
-            } finally {
-                sendBtn.disabled = false;
-                stopBtn.style.display = 'none';
-                isStreaming = false;
-                abortController = null;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-        }
-
-        stopBtn.addEventListener('click', () => {
-            if (abortController) {
-                abortController.abort();
-                statusText.textContent = '⏹ 正在停止...';
-            }
-        });
-
-        // ============================================================
         //  启动
         // ============================================================
         loadData();
         renderChat();
-        statusText.textContent = '就绪 (V4 模型，支持文件夹/置顶/安全删除)';
+        statusText.textContent = '就绪 (V4 模型，支持深度思考开关)';
     </script>
 </body>
 </html>

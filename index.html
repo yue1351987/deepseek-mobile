@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeepSeek 写作台</title>
+    <title>My ds</title>
     <style>
         /* ========== 基础变量 ========== */
         :root {
@@ -72,6 +72,7 @@
             cursor: pointer;
             padding: 0 4px;
             line-height: 1;
+            flex-shrink: 0;
         }
         #titleArea {
             flex: 1;
@@ -82,21 +83,12 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 40%;
-        }
-        #modelIndicator {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-muted);
-            background: var(--bg-input);
-            padding: 4px 12px;
-            border-radius: 30px;
-            border: 1px solid var(--border-light);
         }
         .topbar-right {
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-shrink: 0;
         }
         #searchBtnTop {
             background: none;
@@ -112,13 +104,17 @@
             background: var(--accent-blue);
             color: white;
             border: none;
-            border-radius: 30px;
-            padding: 6px 16px;
-            font-size: 14px;
-            font-weight: 500;
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            font-size: 22px;
+            font-weight: 300;
             cursor: pointer;
             transition: background var(--transition);
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
         #newChatBtn:active { background: var(--accent-blue-hover); }
 
@@ -283,12 +279,13 @@
             flex-direction: column;
             gap: 6px;
         }
-        /* 深度思考行：左侧开关 + 右侧模型&tokens */
         #deepThinkingRow {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 4px;
+            flex-wrap: wrap;
+            gap: 4px;
         }
         #deepThinkingLeft {
             display: flex;
@@ -336,17 +333,26 @@
         #deepThinkingRight {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             font-size: 12px;
             color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        #deepThinkingRight .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         #deepThinkingRight .model-label {
             font-weight: 500;
             color: var(--text-secondary);
         }
-        #deepThinkingRight .tokens-label {
+        #deepThinkingRight .tokens-label,
+        #deepThinkingRight .chars-label,
+        #deepThinkingRight .status-label {
             color: var(--text-muted);
         }
+        #deepThinkingRight .status-label { color: var(--text-secondary); font-weight: 500; }
 
         #inputRow {
             display: flex;
@@ -389,13 +395,14 @@
             background: var(--accent-blue);
             color: white;
             border: none;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: background var(--transition);
+            font-weight: 300;
         }
         #sendBtn:active { background: var(--accent-blue-hover); }
         #sendBtn:disabled { opacity: 0.4; pointer-events: none; }
@@ -415,20 +422,21 @@
         }
         #stopBtn:active { opacity: 0.7; }
         #fileInput { display: none; }
-        #charCounter {
+        #charCounterBottom {
             font-size: 12px;
             color: var(--text-muted);
             text-align: right;
             padding-right: 4px;
             user-select: none;
+            display: none;
         }
 
         /* ========== 状态栏 ========== */
         #statusBar {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            padding: 6px 16px;
+            padding: 4px 16px;
             font-size: 12px;
             color: var(--text-muted);
             background: var(--bg-surface);
@@ -529,7 +537,7 @@
             border-color: var(--accent-blue);
         }
         .setting-item .action-btn {
-            padding: 6px 16px;
+            padding: 6px 14px;
             border: none;
             border-radius: 30px;
             background: var(--accent-blue);
@@ -539,6 +547,12 @@
             transition: background var(--transition);
         }
         .setting-item .action-btn:active { background: var(--accent-blue-hover); }
+        .setting-item .action-btn.secondary {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+        }
+        .setting-item .action-btn.secondary:active { background: var(--border-light); }
         .setting-item .file-input-wrapper {
             position: relative;
             overflow: hidden;
@@ -549,6 +563,20 @@
             opacity: 0;
             width: 100%; height: 100%;
             cursor: pointer;
+        }
+        .setting-item .api-key-row {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+            align-items: center;
+        }
+        .setting-item .api-key-row input {
+            flex: 1;
+            min-width: 80px;
+        }
+        .setting-item .api-key-row .action-btn {
+            padding: 4px 12px;
+            font-size: 12px;
         }
         .divider {
             height: 1px;
@@ -685,7 +713,7 @@
         .folder-item .session-name { font-weight: 600; color: var(--accent-blue); }
         .folder-item.active .session-name { color: white; }
 
-        /* 抽屉底部按钮容器 */
+        /* 抽屉底部 */
         #drawerFooter {
             flex-shrink: 0;
             display: flex;
@@ -694,6 +722,31 @@
             margin-top: 8px;
             border-top: 1px solid var(--border-light);
             padding-top: 10px;
+        }
+        #storageInfo {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 2px 0;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        #storageInfo .bar-bg {
+            width: 60px;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 10px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        #storageInfo .bar-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 10px;
+            transition: width 0.3s;
         }
         #drawerFooter button {
             width: 100%;
@@ -806,10 +859,11 @@
             .msg-wrapper { max-width: 96%; }
             #drawer { left: -100%; width: 88%; }
             #topbar { padding: 8px 12px; }
-            #titleArea { max-width: 30%; font-size: 14px; }
-            #newChatBtn { font-size: 12px; padding: 4px 12px; }
+            #titleArea { font-size: 14px; }
+            #newChatBtn { width: 30px; height: 30px; font-size: 18px; }
             #settingsPanel { padding: 20px; }
-            #deepThinkingRight .model-label { font-size: 11px; }
+            #deepThinkingRight { font-size: 11px; gap: 8px; }
+            #deepThinkingRight .status-item { gap: 2px; }
         }
     </style>
 </head>
@@ -819,10 +873,9 @@
     <div id="topbar">
         <button id="menuBtn">☰</button>
         <span id="titleArea">新对话</span>
-        <span id="modelIndicator">快速</span>
         <div class="topbar-right">
             <button id="searchBtnTop">🔍</button>
-            <button id="newChatBtn">+ 新对话</button>
+            <button id="newChatBtn">+</button>
         </div>
     </div>
 
@@ -842,23 +895,32 @@
                 </div>
             </div>
             <div id="deepThinkingRight">
-                <span class="model-label" id="statusModel">快速</span>
-                <span class="tokens-label" id="statusTokens">~0 tokens</span>
+                <span class="status-item">
+                    <span class="model-label" id="statusModel">快速</span>
+                </span>
+                <span class="status-item" id="tokensGroup">
+                    <span class="tokens-label" id="statusTokens">~0 tokens</span>
+                </span>
+                <span class="status-item" id="charsGroup">
+                    <span class="chars-label" id="statusChars">0 字符</span>
+                </span>
+                <span class="status-item">
+                    <span class="status-label" id="statusShort">就绪</span>
+                </span>
             </div>
         </div>
         <div id="inputRow">
             <button id="attachBtn">📎</button>
             <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx">
             <textarea id="prompt" rows="1" placeholder="输入问题..."></textarea>
-            <button id="sendBtn">➤</button>
+            <button id="sendBtn">↑</button>
             <button id="stopBtn">⏹</button>
         </div>
-        <div id="charCounter">0 字符</div>
     </div>
 
-    <!-- 状态栏 -->
+    <!-- 状态栏（精简） -->
     <div id="statusBar">
-        <span id="statusText">就绪</span>
+        <span id="statusText"></span>
     </div>
 
     <!-- 设置浮层面板 -->
@@ -882,7 +944,11 @@
                 </div>
                 <div class="setting-item">
                     <label>API Key</label>
-                    <input type="password" id="settingsApiKey" placeholder="输入 Key">
+                    <div class="api-key-row">
+                        <input type="password" id="settingsApiKey" placeholder="输入 Key">
+                        <button id="settingsApiSave" class="action-btn">保存</button>
+                        <button id="settingsApiClear" class="action-btn secondary">修改</button>
+                    </div>
                 </div>
                 <div class="setting-item">
                     <label>字号 (px)</label>
@@ -898,6 +964,14 @@
                 <div class="setting-item">
                     <label>显示思考过程</label>
                     <button id="settingsShowReasoning" class="toggle-btn active">显示</button>
+                </div>
+                <div class="setting-item">
+                    <label>显示字符计数</label>
+                    <button id="settingsShowChars" class="toggle-btn active">显示</button>
+                </div>
+                <div class="setting-item">
+                    <label>显示Token计数</label>
+                    <button id="settingsShowTokens" class="toggle-btn active">显示</button>
                 </div>
                 <div class="divider"></div>
                 <div class="setting-item">
@@ -951,6 +1025,11 @@
         </div>
         <div id="sessionListContainer"></div>
         <div id="drawerFooter">
+            <div id="storageInfo">
+                <span id="storageText">本地存储: 0 KB</span>
+                <span class="bar-bg"><span class="bar-fill" id="storageBar" style="width:0%"></span></span>
+                <span id="storagePercent">0%</span>
+            </div>
             <button id="settingsBtn">⚙️ 设置</button>
         </div>
     </div>
@@ -970,6 +1049,8 @@
         let mode = 'flash';
         let deepThinking = false;
         let showReasoning = true;
+        let showChars = true;
+        let showTokens = true;
         let fontSize = 15;
         let memoryMode = 'full';
 
@@ -980,6 +1061,8 @@
         const MODE_KEY = 'deepseek_mode';
         const DEEP_THINKING_KEY = 'deepseek_deep_thinking';
         const SHOW_REASONING_KEY = 'deepseek_show_reasoning';
+        const SHOW_CHARS_KEY = 'deepseek_show_chars';
+        const SHOW_TOKENS_KEY = 'deepseek_show_tokens';
         const FONT_SIZE_KEY = 'deepseek_font_size';
         const MEMORY_MODE_KEY = 'deepseek_memory_mode';
 
@@ -989,7 +1072,6 @@
         const sendBtn = document.getElementById('sendBtn');
         const stopBtn = document.getElementById('stopBtn');
         const titleArea = document.getElementById('titleArea');
-        const modelIndicator = document.getElementById('modelIndicator');
         const menuBtn = document.getElementById('menuBtn');
         const newChatBtn = document.getElementById('newChatBtn');
         const drawer = document.getElementById('drawer');
@@ -1002,6 +1084,7 @@
         const fileInput = document.getElementById('fileInput');
         const attachmentBar = document.getElementById('attachmentBar');
         const statusText = document.getElementById('statusText');
+        const statusShort = document.getElementById('statusShort');
         const searchBtnTop = document.getElementById('searchBtnTop');
         const searchModal = document.getElementById('searchModal');
         const searchInput = document.getElementById('searchInput');
@@ -1012,10 +1095,15 @@
         const exportAI = document.getElementById('exportAI');
         const exportUser = document.getElementById('exportUser');
         const exportAll = document.getElementById('exportAll');
-        const charCounter = document.getElementById('charCounter');
         const deepSwitch = document.getElementById('deepSwitch');
         const statusModel = document.getElementById('statusModel');
         const statusTokens = document.getElementById('statusTokens');
+        const statusChars = document.getElementById('statusChars');
+        const tokensGroup = document.getElementById('tokensGroup');
+        const charsGroup = document.getElementById('charsGroup');
+        const storageText = document.getElementById('storageText');
+        const storageBar = document.getElementById('storageBar');
+        const storagePercent = document.getElementById('storagePercent');
 
         // 设置面板
         const settingsBtn = document.getElementById('settingsBtn');
@@ -1024,9 +1112,13 @@
         const settingsDarkToggle = document.getElementById('settingsDarkToggle');
         const settingsModeSelect = document.getElementById('settingsModeSelect');
         const settingsApiKey = document.getElementById('settingsApiKey');
+        const settingsApiSave = document.getElementById('settingsApiSave');
+        const settingsApiClear = document.getElementById('settingsApiClear');
         const settingsFontSize = document.getElementById('settingsFontSize');
         const settingsMemoryMode = document.getElementById('settingsMemoryMode');
         const settingsShowReasoning = document.getElementById('settingsShowReasoning');
+        const settingsShowChars = document.getElementById('settingsShowChars');
+        const settingsShowTokens = document.getElementById('settingsShowTokens');
         const settingsBackupBtn = document.getElementById('settingsBackupBtn');
         const settingsBackupFileInput = document.getElementById('settingsBackupFileInput');
 
@@ -1039,6 +1131,7 @@
             localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(sessions));
             localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(folders));
             updateTokenCounter();
+            updateStorageInfo();
         }
 
         function getCurrentSession() { return sessions.find(s => s.id === currentId) || sessions[0]; }
@@ -1055,6 +1148,32 @@
                 if (m.reasoning) total += estimateTokens(m.reasoning);
             });
             statusTokens.textContent = `~${total} tokens`;
+        }
+
+        function updateCharCounter() {
+            const len = promptInput.value.length;
+            statusChars.textContent = `${len} 字符`;
+        }
+
+        function updateStorageInfo() {
+            try {
+                let total = 0;
+                for (let key in localStorage) {
+                    if (localStorage.hasOwnProperty(key)) {
+                        total += localStorage[key].length * 2; // UTF-16
+                    }
+                }
+                const kb = (total / 1024).toFixed(1);
+                const maxKB = 5120; // 5MB 估算
+                const pct = Math.min(100, (total / (1024 * 5120)) * 100);
+                storageText.textContent = `本地存储: ${kb} KB`;
+                storageBar.style.width = pct + '%';
+                storagePercent.textContent = Math.round(pct) + '%';
+            } catch (e) {
+                storageText.textContent = '本地存储: --';
+                storageBar.style.width = '0%';
+                storagePercent.textContent = '--';
+            }
         }
 
         // ============================================================
@@ -1081,6 +1200,14 @@
             if (sr === 'false') showReasoning = false;
             updateShowReasoningUI();
 
+            const sc = localStorage.getItem(SHOW_CHARS_KEY);
+            if (sc === 'false') showChars = false;
+            updateShowCharsUI();
+
+            const st = localStorage.getItem(SHOW_TOKENS_KEY);
+            if (st === 'false') showTokens = false;
+            updateShowTokensUI();
+
             const fs = localStorage.getItem(FONT_SIZE_KEY);
             if (fs) { fontSize = parseInt(fs); if (isNaN(fontSize) || fontSize < 12) fontSize = 15; }
             settingsFontSize.value = fontSize;
@@ -1105,21 +1232,18 @@
             const cur = sessions.find(s => s.id === currentId);
             if (cur) cur.active = true;
             saveSessions();
+            updateStorageInfo();
         }
-
-        function saveSetting(key, value) { localStorage.setItem(key, value); }
 
         // ============================================================
         //  UI 更新函数
         // ============================================================
         function updateModeUI() {
             if (mode === 'flash') {
-                modelIndicator.textContent = '快速';
                 statusModel.textContent = '快速';
                 deepSwitch.classList.add('disabled');
                 deepSwitch.classList.remove('active');
             } else {
-                modelIndicator.textContent = '专家';
                 statusModel.textContent = '专家';
                 deepSwitch.classList.remove('disabled');
                 if (deepThinking) deepSwitch.classList.add('active');
@@ -1149,13 +1273,37 @@
             }
         }
 
+        function updateShowCharsUI() {
+            if (showChars) {
+                settingsShowChars.textContent = '显示';
+                settingsShowChars.classList.add('active');
+                charsGroup.style.display = 'inline-flex';
+            } else {
+                settingsShowChars.textContent = '隐藏';
+                settingsShowChars.classList.remove('active');
+                charsGroup.style.display = 'none';
+            }
+        }
+
+        function updateShowTokensUI() {
+            if (showTokens) {
+                settingsShowTokens.textContent = '显示';
+                settingsShowTokens.classList.add('active');
+                tokensGroup.style.display = 'inline-flex';
+            } else {
+                settingsShowTokens.textContent = '隐藏';
+                settingsShowTokens.classList.remove('active');
+                tokensGroup.style.display = 'none';
+            }
+        }
+
         // ============================================================
         //  渲染聊天
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
             if (!session) return;
-            titleArea.textContent = session.name || '未命名';
+            titleArea.textContent = session.name || '新对话';
             chatBox.innerHTML = '';
 
             const msgs = session.messages || [];
@@ -1300,7 +1448,8 @@
             renderChat();
             promptInput.value = newText.trim();
             promptInput.focus();
-            statusText.textContent = '消息已修改，按发送键重新生成';
+            statusShort.textContent = '消息已修改';
+            setTimeout(() => { if (statusShort.textContent === '消息已修改') statusShort.textContent = '就绪'; }, 1500);
         }
 
         async function regenerateMessage(index) {
@@ -1354,7 +1503,8 @@
                 session.messages.push({ role: 'assistant', content: reply });
                 saveSessions();
                 renderChat();
-                statusText.textContent = '✅ 重新生成完成';
+                statusShort.textContent = '✅ 重新生成完成';
+                setTimeout(() => { if (statusShort.textContent === '✅ 重新生成完成') statusShort.textContent = '就绪'; }, 2000);
             } catch (e) {
                 session.messages.pop();
                 session.messages.push({ role: 'assistant', content: `❌ 失败: ${e.message}` });
@@ -1404,7 +1554,7 @@
             sendBtn.disabled = true;
             stopBtn.style.display = 'flex';
             isStreaming = true;
-            statusText.textContent = '⏳ 生成中...';
+            statusShort.textContent = '⏳ 生成中...';
             abortController = new AbortController();
 
             const aiMsgIndex = session.messages.length;
@@ -1515,7 +1665,8 @@
                 if (details && summary && fullReasoning) summary.textContent = '思考过程 (点击折叠)';
                 msgDiv.classList.remove('cursor-blink');
                 renderChat();
-                statusText.textContent = '✅ 回复完成';
+                statusShort.textContent = '✅ 回复完成';
+                setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; }, 2000);
 
             } catch (error) {
                 if (error.name === 'AbortError') {
@@ -1527,13 +1678,14 @@
                     }
                     saveSessions();
                     renderChat();
-                    statusText.textContent = '⏹ 已停止生成';
+                    statusShort.textContent = '⏹ 已停止生成';
+                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止生成') statusShort.textContent = '就绪'; }, 2000);
                 } else {
                     session.messages.pop();
                     session.messages.push({ role: 'assistant', content: `❌ 出错：${error.message}`, reasoning: showReasoning ? (fullReasoning || '出错前思考') : '' });
                     saveSessions();
                     renderChat();
-                    statusText.textContent = '⚠️ 请求失败';
+                    statusShort.textContent = '⚠️ 请求失败';
                 }
             } finally {
                 sendBtn.disabled = false;
@@ -1541,11 +1693,12 @@
                 isStreaming = false;
                 abortController = null;
                 chatBox.scrollTop = chatBox.scrollHeight;
+                updateCharCounter();
             }
         }
 
         stopBtn.addEventListener('click', () => {
-            if (abortController) { abortController.abort(); statusText.textContent = '⏹ 正在停止...'; }
+            if (abortController) { abortController.abort(); statusShort.textContent = '⏹ 正在停止...'; }
         });
 
         // ============================================================
@@ -1873,6 +2026,7 @@
             renderChat();
             closeDrawer();
             promptInput.focus();
+            updateCharCounter();
         }
 
         function openDrawer() { renderDrawer(); overlay.classList.add('active'); drawer.classList.add('open'); }
@@ -1926,16 +2080,33 @@
                 else deepThinking = false;
                 updateDeepThinkingUI();
             }
-            statusText.textContent = `已切换为 ${mode === 'flash' ? '快速' : '专家'} 模式`;
-            setTimeout(() => { if (statusText.textContent.includes('切换')) statusText.textContent = '就绪'; }, 1500);
+            statusShort.textContent = `已切换为 ${mode === 'flash' ? '快速' : '专家'} 模式`;
+            setTimeout(() => { if (statusShort.textContent.includes('切换')) statusShort.textContent = '就绪'; }, 1500);
         });
 
-        // API Key
-        settingsApiKey.addEventListener('change', () => {
+        // API Key - 保存
+        settingsApiSave.addEventListener('click', () => {
             const key = settingsApiKey.value.trim();
-            if (key) { localStorage.setItem(KEY_STORAGE, key); currentKey = key; }
+            if (key) {
+                localStorage.setItem(KEY_STORAGE, key);
+                currentKey = key;
+                statusShort.textContent = '✅ Key 已保存';
+                setTimeout(() => { if (statusShort.textContent === '✅ Key 已保存') statusShort.textContent = '就绪'; }, 1500);
+            } else {
+                alert('请输入有效的 API Key');
+            }
         });
-        // 保留顶部没有API Key栏，但设置中保存
+
+        // API Key - 修改（清除）
+        settingsApiClear.addEventListener('click', () => {
+            if (confirm('确定要清除 API Key 吗？')) {
+                localStorage.removeItem(KEY_STORAGE);
+                currentKey = '';
+                settingsApiKey.value = '';
+                statusShort.textContent = 'Key 已清除';
+                setTimeout(() => { if (statusShort.textContent === 'Key 已清除') statusShort.textContent = '就绪'; }, 1500);
+            }
+        });
 
         // 字号
         settingsFontSize.addEventListener('change', () => {
@@ -1952,8 +2123,8 @@
         settingsMemoryMode.addEventListener('change', () => {
             memoryMode = settingsMemoryMode.value;
             localStorage.setItem(MEMORY_MODE_KEY, memoryMode);
-            statusText.textContent = `记忆摘要: ${memoryMode === 'full' ? '全量' : '窗口(最近20条)'}`;
-            setTimeout(() => { if (statusText.textContent.includes('记忆摘要')) statusText.textContent = '就绪'; }, 2000);
+            statusShort.textContent = `记忆摘要: ${memoryMode === 'full' ? '全量' : '窗口(最近20条)'}`;
+            setTimeout(() => { if (statusShort.textContent.includes('记忆摘要')) statusShort.textContent = '就绪'; }, 2000);
         });
 
         // 显示思考过程
@@ -1962,8 +2133,24 @@
             localStorage.setItem(SHOW_REASONING_KEY, String(showReasoning));
             updateShowReasoningUI();
             renderChat();
-            statusText.textContent = showReasoning ? '思考过程已显示' : '思考过程已隐藏';
-            setTimeout(() => { if (statusText.textContent.includes('思考过程')) statusText.textContent = '就绪'; }, 1500);
+            statusShort.textContent = showReasoning ? '思考过程已显示' : '思考过程已隐藏';
+            setTimeout(() => { if (statusShort.textContent.includes('思考过程')) statusShort.textContent = '就绪'; }, 1500);
+        });
+
+        // 显示字符计数
+        settingsShowChars.addEventListener('click', () => {
+            showChars = !showChars;
+            localStorage.setItem(SHOW_CHARS_KEY, String(showChars));
+            updateShowCharsUI();
+            updateCharCounter();
+        });
+
+        // 显示Token计数
+        settingsShowTokens.addEventListener('click', () => {
+            showTokens = !showTokens;
+            localStorage.setItem(SHOW_TOKENS_KEY, String(showTokens));
+            updateShowTokensUI();
+            updateTokenCounter();
         });
 
         // 备份 & 恢复
@@ -1979,6 +2166,8 @@
                     mode: mode,
                     deepThinking: deepThinking,
                     showReasoning: showReasoning,
+                    showChars: showChars,
+                    showTokens: showTokens,
                     fontSize: fontSize,
                     memoryMode: memoryMode
                 };
@@ -1988,13 +2177,13 @@
                 const a = document.createElement('a');
                 a.href = url;
                 const dateStr = new Date().toISOString().slice(0,10);
-                a.download = `DeepSeek_备份_${dateStr}.json`;
+                a.download = `My_ds_备份_${dateStr}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                statusText.textContent = '✅ 备份成功！';
-                setTimeout(() => { if (statusText.textContent === '✅ 备份成功！') statusText.textContent = '就绪'; }, 3000);
+                statusShort.textContent = '✅ 备份成功！';
+                setTimeout(() => { if (statusShort.textContent === '✅ 备份成功！') statusShort.textContent = '就绪'; }, 3000);
             } catch (e) { alert('备份失败：' + e.message); }
         }
 
@@ -2028,6 +2217,16 @@
                         localStorage.setItem(SHOW_REASONING_KEY, String(showReasoning));
                         updateShowReasoningUI();
                     }
+                    if (data.showChars !== undefined) {
+                        showChars = data.showChars;
+                        localStorage.setItem(SHOW_CHARS_KEY, String(showChars));
+                        updateShowCharsUI();
+                    }
+                    if (data.showTokens !== undefined) {
+                        showTokens = data.showTokens;
+                        localStorage.setItem(SHOW_TOKENS_KEY, String(showTokens));
+                        updateShowTokensUI();
+                    }
                     if (data.fontSize) {
                         fontSize = data.fontSize;
                         localStorage.setItem(FONT_SIZE_KEY, String(fontSize));
@@ -2048,7 +2247,8 @@
                     }
                     saveSessions();
                     renderChat();
-                    statusText.textContent = '✅ 恢复成功！';
+                    updateCharCounter();
+                    statusShort.textContent = '✅ 恢复成功！';
                     alert('✅ 恢复成功！所有数据已还原。');
                 } catch (err) {
                     alert('恢复失败：' + err.message);
@@ -2069,7 +2269,7 @@
         });
 
         // ============================================================
-        //  深度思考开关（点击切换）
+        //  深度思考开关
         // ============================================================
         deepSwitch.addEventListener('click', () => {
             if (mode !== 'pro') {
@@ -2079,8 +2279,8 @@
             deepThinking = !deepThinking;
             localStorage.setItem(DEEP_THINKING_KEY, String(deepThinking));
             updateDeepThinkingUI();
-            statusText.textContent = deepThinking ? '深度思考已开启 (高费用)' : '深度思考已关闭 (低费用)';
-            setTimeout(() => { if (statusText.textContent.includes('深度思考')) statusText.textContent = '就绪'; }, 2000);
+            statusShort.textContent = deepThinking ? '深度思考已开启 (高费用)' : '深度思考已关闭 (低费用)';
+            setTimeout(() => { if (statusShort.textContent.includes('深度思考')) statusShort.textContent = '就绪'; }, 2000);
         });
 
         // ============================================================
@@ -2169,13 +2369,6 @@
             closeExport();
         }
 
-        // 在抽屉底部添加"导出当前对话"按钮（之前已加，现在重新添加）
-        const exportCurrentBtn = document.createElement('button');
-        exportCurrentBtn.textContent = '📤 导出当前对话';
-        exportCurrentBtn.style.cssText = 'width:100%;padding:8px;background:var(--bg-input);border:1px solid var(--border-light);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:pointer;margin-top:4px;';
-        exportCurrentBtn.addEventListener('click', () => { exportModal.classList.add('active'); });
-        document.querySelector('#drawerFooter').appendChild(exportCurrentBtn);
-
         exportModal.addEventListener('click', (e) => { if (e.target === exportModal) closeExport(); });
         closeExportBtn.addEventListener('click', closeExport);
         function closeExport() { exportModal.classList.remove('active'); }
@@ -2188,7 +2381,7 @@
         // ============================================================
         promptInput.addEventListener('input', function() {
             const len = this.value.length;
-            charCounter.textContent = `${len} 字符`;
+            statusChars.textContent = `${len} 字符`;
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         });
@@ -2198,8 +2391,11 @@
         // ============================================================
         loadData();
         renderChat();
-        charCounter.textContent = '0 字符';
-        statusText.textContent = '就绪';
+        updateCharCounter();
+        statusShort.textContent = '就绪';
+        updateStorageInfo();
+        // 每30秒更新一次存储信息
+        setInterval(updateStorageInfo, 30000);
     </script>
 </body>
 </html>

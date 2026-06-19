@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My ds</title>
     <style>
-        /* ========== 基础变量 ========== */
         :root {
             --bg-main: #f2f4f8;
             --bg-surface: #ffffff;
@@ -117,6 +116,53 @@
             line-height: 1;
         }
         #newChatBtn:active { background: var(--accent-blue-hover); }
+
+        /* ========== 目录按钮 ========== */
+        #tocBtn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0 4px;
+            transition: color var(--transition);
+        }
+        #tocBtn:active { color: var(--text-primary); }
+        #tocBtn.active { color: var(--accent-blue); }
+
+        /* ========== 目录面板 ========== */
+        #tocPanel {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+        #tocPanel.open {
+            max-height: 200px;
+            padding: 8px 16px;
+            overflow-y: auto;
+        }
+        #tocPanel .toc-item {
+            padding: 4px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-bottom: 1px dashed var(--border-light);
+            transition: color var(--transition);
+        }
+        #tocPanel .toc-item:last-child { border-bottom: none; }
+        #tocPanel .toc-item:hover { color: var(--accent-blue); }
+        #tocPanel .toc-item .toc-index {
+            color: var(--text-muted);
+            margin-right: 8px;
+            font-weight: 500;
+        }
 
         /* ========== 附件条 ========== */
         #attachmentBar {
@@ -298,6 +344,11 @@
             cursor: pointer;
             user-select: none;
         }
+        #deepThinkingLeft .chars-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
         .switch {
             position: relative;
             width: 44px;
@@ -326,10 +377,6 @@
         .switch.active .slider {
             transform: translateX(20px);
         }
-        .switch.disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
         #deepThinkingRight {
             display: flex;
             align-items: center;
@@ -348,7 +395,6 @@
             color: var(--text-secondary);
         }
         #deepThinkingRight .tokens-label,
-        #deepThinkingRight .chars-label,
         #deepThinkingRight .status-label {
             color: var(--text-muted);
         }
@@ -422,14 +468,6 @@
         }
         #stopBtn:active { opacity: 0.7; }
         #fileInput { display: none; }
-        #charCounterBottom {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-align: right;
-            padding-right: 4px;
-            user-select: none;
-            display: none;
-        }
 
         /* ========== 状态栏 ========== */
         #statusBar {
@@ -443,7 +481,6 @@
             border-top: 1px solid var(--border-light);
             flex-shrink: 0;
         }
-        #statusText { font-size: 12px; }
 
         /* ========== 设置浮层面板 ========== */
         #settingsOverlay {
@@ -578,13 +615,21 @@
             padding: 4px 12px;
             font-size: 12px;
         }
+        .setting-item .model-confirm-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .setting-item .model-confirm-row select {
+            min-width: 100px;
+        }
         .divider {
             height: 1px;
             background: var(--border-light);
             margin: 8px 0;
         }
 
-        /* ========== 抽屉（左侧菜单） ========== */
+        /* ========== 抽屉 ========== */
         #overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -713,7 +758,6 @@
         .folder-item .session-name { font-weight: 600; color: var(--accent-blue); }
         .folder-item.active .session-name { color: white; }
 
-        /* 抽屉底部 */
         #drawerFooter {
             flex-shrink: 0;
             display: flex;
@@ -874,10 +918,14 @@
         <button id="menuBtn">☰</button>
         <span id="titleArea">新对话</span>
         <div class="topbar-right">
+            <button id="tocBtn" title="显示/隐藏目录">📑</button>
             <button id="searchBtnTop">🔍</button>
             <button id="newChatBtn">+</button>
         </div>
     </div>
+
+    <!-- 目录面板 -->
+    <div id="tocPanel"></div>
 
     <!-- 附件条 -->
     <div id="attachmentBar"></div>
@@ -890,9 +938,10 @@
         <div id="deepThinkingRow">
             <div id="deepThinkingLeft">
                 <label for="deepSwitch">深度思考</label>
-                <div id="deepSwitch" class="switch disabled">
+                <div id="deepSwitch" class="switch">
                     <div class="slider"></div>
                 </div>
+                <span class="chars-label" id="statusChars">0 字符</span>
             </div>
             <div id="deepThinkingRight">
                 <span class="status-item">
@@ -900,9 +949,6 @@
                 </span>
                 <span class="status-item" id="tokensGroup">
                     <span class="tokens-label" id="statusTokens">~0 tokens</span>
-                </span>
-                <span class="status-item" id="charsGroup">
-                    <span class="chars-label" id="statusChars">0 字符</span>
                 </span>
                 <span class="status-item">
                     <span class="status-label" id="statusShort">就绪</span>
@@ -918,7 +964,7 @@
         </div>
     </div>
 
-    <!-- 状态栏（精简） -->
+    <!-- 状态栏 -->
     <div id="statusBar">
         <span id="statusText"></span>
     </div>
@@ -937,10 +983,13 @@
                 </div>
                 <div class="setting-item">
                     <label>模型模式</label>
-                    <select id="settingsModeSelect">
-                        <option value="flash">快速 (Flash)</option>
-                        <option value="pro">专家 (Pro)</option>
-                    </select>
+                    <div class="model-confirm-row">
+                        <select id="settingsModeSelect">
+                            <option value="flash">快速 (Flash)</option>
+                            <option value="pro">专家 (Pro)</option>
+                        </select>
+                        <button id="settingsModeConfirm" class="action-btn">确认</button>
+                    </div>
                 </div>
                 <div class="setting-item">
                     <label>API Key</label>
@@ -1100,10 +1149,12 @@
         const statusTokens = document.getElementById('statusTokens');
         const statusChars = document.getElementById('statusChars');
         const tokensGroup = document.getElementById('tokensGroup');
-        const charsGroup = document.getElementById('charsGroup');
+        const charsGroup = document.getElementById('charsGroup'); // 实际已移动到左侧，但保留引用
         const storageText = document.getElementById('storageText');
         const storageBar = document.getElementById('storageBar');
         const storagePercent = document.getElementById('storagePercent');
+        const tocBtn = document.getElementById('tocBtn');
+        const tocPanel = document.getElementById('tocPanel');
 
         // 设置面板
         const settingsBtn = document.getElementById('settingsBtn');
@@ -1111,6 +1162,7 @@
         const closeSettingsBtn = document.getElementById('closeSettingsBtn');
         const settingsDarkToggle = document.getElementById('settingsDarkToggle');
         const settingsModeSelect = document.getElementById('settingsModeSelect');
+        const settingsModeConfirm = document.getElementById('settingsModeConfirm');
         const settingsApiKey = document.getElementById('settingsApiKey');
         const settingsApiSave = document.getElementById('settingsApiSave');
         const settingsApiClear = document.getElementById('settingsApiClear');
@@ -1160,11 +1212,11 @@
                 let total = 0;
                 for (let key in localStorage) {
                     if (localStorage.hasOwnProperty(key)) {
-                        total += localStorage[key].length * 2; // UTF-16
+                        total += localStorage[key].length * 2;
                     }
                 }
                 const kb = (total / 1024).toFixed(1);
-                const maxKB = 5120; // 5MB 估算
+                const maxKB = 5120;
                 const pct = Math.min(100, (total / (1024 * 5120)) * 100);
                 storageText.textContent = `本地存储: ${kb} KB`;
                 storageBar.style.width = pct + '%';
@@ -1233,6 +1285,7 @@
             if (cur) cur.active = true;
             saveSessions();
             updateStorageInfo();
+            updateTOC();
         }
 
         // ============================================================
@@ -1241,24 +1294,18 @@
         function updateModeUI() {
             if (mode === 'flash') {
                 statusModel.textContent = '快速';
-                deepSwitch.classList.add('disabled');
-                deepSwitch.classList.remove('active');
             } else {
                 statusModel.textContent = '专家';
-                deepSwitch.classList.remove('disabled');
-                if (deepThinking) deepSwitch.classList.add('active');
-                else deepSwitch.classList.remove('active');
             }
             settingsModeSelect.value = mode;
+            // 深度思考开关不再禁用
+            updateDeepThinkingUI();
         }
 
         function updateDeepThinkingUI() {
-            if (mode === 'pro') {
-                deepSwitch.classList.remove('disabled');
-                if (deepThinking) deepSwitch.classList.add('active');
-                else deepSwitch.classList.remove('active');
+            if (deepThinking) {
+                deepSwitch.classList.add('active');
             } else {
-                deepSwitch.classList.add('disabled');
                 deepSwitch.classList.remove('active');
             }
         }
@@ -1277,11 +1324,11 @@
             if (showChars) {
                 settingsShowChars.textContent = '显示';
                 settingsShowChars.classList.add('active');
-                charsGroup.style.display = 'inline-flex';
+                statusChars.style.display = 'inline';
             } else {
                 settingsShowChars.textContent = '隐藏';
                 settingsShowChars.classList.remove('active');
-                charsGroup.style.display = 'none';
+                statusChars.style.display = 'none';
             }
         }
 
@@ -1296,6 +1343,55 @@
                 tokensGroup.style.display = 'none';
             }
         }
+
+        // ============================================================
+        //  目录功能 (TOC)
+        // ============================================================
+        function updateTOC() {
+            const session = getCurrentSession();
+            if (!session) return;
+            const userMessages = session.messages.filter(m => m.role === 'user' && m.content);
+            tocPanel.innerHTML = '';
+            if (userMessages.length === 0) {
+                tocPanel.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0;">暂无用户消息</div>';
+                return;
+            }
+            userMessages.forEach((msg, idx) => {
+                const div = document.createElement('div');
+                div.className = 'toc-item';
+                const preview = msg.content.length > 10 ? msg.content.slice(0, 10) + '…' : msg.content;
+                const index = session.messages.indexOf(msg); // 实际索引
+                div.innerHTML = `<span class="toc-index">#${idx+1}</span> ${preview}`;
+                div.addEventListener('click', () => {
+                    // 滚动到该消息
+                    const wrappers = chatBox.querySelectorAll('.msg-wrapper');
+                    // 找到第 index 个 .msg-wrapper
+                    if (wrappers[index]) {
+                        wrappers[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // 短暂高亮
+                        wrappers[index].style.transition = 'background 0.3s';
+                        wrappers[index].style.background = 'var(--highlight-bg, #fef08a)';
+                        setTimeout(() => wrappers[index].style.background = '', 1500);
+                    }
+                    // 关闭面板（可选）
+                    // closeTOC();
+                });
+                tocPanel.appendChild(div);
+            });
+        }
+
+        function toggleTOC() {
+            const isOpen = tocPanel.classList.toggle('open');
+            tocBtn.classList.toggle('active', isOpen);
+            if (isOpen) updateTOC();
+        }
+
+        function closeTOC() {
+            tocPanel.classList.remove('open');
+            tocBtn.classList.remove('active');
+        }
+
+        tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
         //  渲染聊天
@@ -1379,6 +1475,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
             renderDrawer();
             updateTokenCounter();
+            updateTOC(); // 更新目录
         }
 
         function createVersionControl(msg, msgIndex) {
@@ -1488,8 +1585,11 @@
                     stream: false,
                     max_tokens: 4096
                 };
-                if (mode === 'pro' && deepThinking) requestBody.reasoning_effort = 'high';
-                else if (mode === 'pro') requestBody.reasoning_effort = 'low';
+                if (deepThinking) {
+                    requestBody.reasoning_effort = 'high';
+                } else {
+                    requestBody.reasoning_effort = 'low';
+                }
 
                 const response = await fetch('https://api.deepseek.com/chat/completions', {
                     method: 'POST',
@@ -1605,8 +1705,11 @@
                     stream: true,
                     max_tokens: 4096
                 };
-                if (mode === 'pro' && deepThinking) requestBody.reasoning_effort = 'high';
-                else if (mode === 'pro') requestBody.reasoning_effort = 'low';
+                if (deepThinking) {
+                    requestBody.reasoning_effort = 'high';
+                } else {
+                    requestBody.reasoning_effort = 'low';
+                }
                 if (fileIds.length > 0) requestBody.file_ids = fileIds;
 
                 const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -2065,23 +2168,19 @@
             localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
         });
 
-        // 模型模式
-        settingsModeSelect.addEventListener('change', () => {
-            mode = settingsModeSelect.value;
-            localStorage.setItem(MODE_KEY, mode);
-            updateModeUI();
-            if (mode === 'flash') {
-                deepThinking = false;
-                localStorage.setItem(DEEP_THINKING_KEY, 'false');
-                updateDeepThinkingUI();
+        // 模型模式 - 确认按钮
+        settingsModeConfirm.addEventListener('click', () => {
+            const newMode = settingsModeSelect.value;
+            if (newMode !== mode) {
+                mode = newMode;
+                localStorage.setItem(MODE_KEY, mode);
+                updateModeUI();
+                statusShort.textContent = `已切换为 ${mode === 'flash' ? '快速' : '专家'} 模式`;
+                setTimeout(() => { if (statusShort.textContent.includes('切换')) statusShort.textContent = '就绪'; }, 1500);
             } else {
-                const dt = localStorage.getItem(DEEP_THINKING_KEY);
-                if (dt === 'true') deepThinking = true;
-                else deepThinking = false;
-                updateDeepThinkingUI();
+                statusShort.textContent = '模式未改变';
+                setTimeout(() => { if (statusShort.textContent === '模式未改变') statusShort.textContent = '就绪'; }, 1000);
             }
-            statusShort.textContent = `已切换为 ${mode === 'flash' ? '快速' : '专家'} 模式`;
-            setTimeout(() => { if (statusShort.textContent.includes('切换')) statusShort.textContent = '就绪'; }, 1500);
         });
 
         // API Key - 保存
@@ -2269,13 +2368,9 @@
         });
 
         // ============================================================
-        //  深度思考开关
+        //  深度思考开关（始终可用）
         // ============================================================
         deepSwitch.addEventListener('click', () => {
-            if (mode !== 'pro') {
-                alert('深度思考仅在专家模式下可用');
-                return;
-            }
             deepThinking = !deepThinking;
             localStorage.setItem(DEEP_THINKING_KEY, String(deepThinking));
             updateDeepThinkingUI();
@@ -2377,7 +2472,7 @@
         exportAll.addEventListener('click', () => exportChat('all'));
 
         // ============================================================
-        //  字数统计
+        //  字数统计（输入实时）
         // ============================================================
         promptInput.addEventListener('input', function() {
             const len = this.value.length;
@@ -2394,7 +2489,6 @@
         updateCharCounter();
         statusShort.textContent = '就绪';
         updateStorageInfo();
-        // 每30秒更新一次存储信息
         setInterval(updateStorageInfo, 30000);
     </script>
 </body>

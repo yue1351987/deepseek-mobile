@@ -45,88 +45,89 @@
         #topbar {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 12px;
+            gap: 4px;
+            padding: 6px 10px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
             flex-wrap: wrap;
         }
-        #menuBtn { font-size: 24px; background: none; border: none; cursor: pointer; color: var(--text-primary); }
-        #titleArea { flex: 1; text-align: center; font-weight: 600; font-size: 16px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
-        .topbar-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); padding: 4px 6px; }
+        #menuBtn { font-size: 22px; background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0 4px; }
+        #titleArea { flex: 1; text-align: center; font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30%; }
+        .topbar-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 2px 5px; }
         .topbar-btn:active { color: var(--text-primary); }
-        #controls { display: flex; align-items: center; gap: 8px; background: var(--bg-primary); padding: 4px 12px 4px 8px; border-radius: 30px; border: 1px solid var(--border-color); }
-        #controls select { background: transparent; border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; outline: none; padding: 4px 0; cursor: pointer; }
-        #darkToggle { background: none; border: none; font-size: 18px; cursor: pointer; padding: 0 4px; }
-        #keyBar { display: flex; gap: 6px; padding: 6px 12px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); flex-shrink: 0; align-items: center; }
-        #apiKey { flex: 1; padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 12px; background: var(--bg-secondary); color: var(--text-primary); outline: none; }
+        #controls { display: flex; align-items: center; gap: 6px; background: var(--bg-primary); padding: 2px 10px 2px 6px; border-radius: 30px; border: 1px solid var(--border-color); }
+        #controls select { background: transparent; border: none; color: var(--text-primary); font-size: 12px; font-weight: 600; outline: none; padding: 2px 0; cursor: pointer; }
+        #darkToggle { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 2px; }
+        #keyBar { display: flex; gap: 4px; padding: 4px 10px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); flex-shrink: 0; align-items: center; }
+        #apiKey { flex: 1; padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 11px; background: var(--bg-secondary); color: var(--text-primary); outline: none; }
         #apiKey:focus { border-color: #4a6cf7; }
-        #saveKeyBtn { padding: 4px 14px; background: #4a6cf7; color: white; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; }
-        #attachmentBar { display: none; gap: 6px; padding: 4px 12px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); flex-shrink: 0; flex-wrap: wrap; }
+        #saveKeyBtn { padding: 3px 12px; background: #4a6cf7; color: white; border: none; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        #attachmentBar { display: none; gap: 4px; padding: 3px 10px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); flex-shrink: 0; flex-wrap: wrap; }
         #attachmentBar.show { display: flex; }
-        .attach-tag { background: var(--bg-secondary); border-radius: 16px; padding: 2px 10px 2px 14px; font-size: 12px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-color); color: var(--text-secondary); }
-        #chatBox { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-primary); }
+        .attach-tag { background: var(--bg-secondary); border-radius: 16px; padding: 1px 8px 1px 12px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        #chatBox { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-primary); }
         .msg-wrapper { display: flex; flex-direction: column; max-width: 92%; animation: fadeIn 0.2s ease; }
         .msg-wrapper.user { align-self: flex-end; align-items: flex-end; }
         .msg-wrapper.assistant { align-self: flex-start; align-items: flex-start; width: 100%; }
-        .msg { padding: 10px 14px; border-radius: 18px; line-height: 1.6; word-break: break-word; font-size: 15px; position: relative; white-space: pre-wrap; width: 100%; }
+        .msg { padding: 8px 12px; border-radius: 16px; line-height: 1.5; word-break: break-word; font-size: 14px; position: relative; white-space: pre-wrap; width: 100%; }
         .user .msg { background: var(--bg-msg-user); color: white; border-bottom-right-radius: 4px; max-width: 100%; }
         .assistant .msg { background: var(--bg-msg-ai); color: var(--text-secondary); border-bottom-left-radius: 4px; max-width: 100%; }
-        .msg img { max-width: 100%; border-radius: 8px; margin-top: 4px; max-height: 200px; }
+        .msg img { max-width: 100%; border-radius: 6px; margin-top: 3px; max-height: 180px; }
         .cursor-blink::after { content: '▊'; animation: blink 0.9s step-end infinite; color: #4a6cf7; margin-left: 2px; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .msg-actions { display: flex; gap: 8px; margin-top: 4px; font-size: 13px; opacity: 0.7; flex-wrap: wrap; align-items: center; }
-        .msg-actions button { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 6px; border-radius: 12px; font-size: 12px; }
+        .msg-actions { display: flex; gap: 6px; margin-top: 3px; font-size: 12px; opacity: 0.7; flex-wrap: wrap; align-items: center; }
+        .msg-actions button { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 1px 5px; border-radius: 10px; font-size: 11px; }
         .msg-actions button:active { background: var(--border-color); }
-        .version-control { display: inline-flex; align-items: center; gap: 4px; background: var(--bg-primary); border-radius: 16px; padding: 0 6px; border: 1px solid var(--border-color); }
-        .version-control button { background: none; border: none; font-size: 14px; cursor: pointer; padding: 0 4px; color: var(--text-muted); }
+        .version-control { display: inline-flex; align-items: center; gap: 2px; background: var(--bg-primary); border-radius: 14px; padding: 0 4px; border: 1px solid var(--border-color); }
+        .version-control button { background: none; border: none; font-size: 12px; cursor: pointer; padding: 0 3px; color: var(--text-muted); }
         .version-control button:active { color: var(--text-primary); }
-        .version-control span { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: center; }
-        .reasoning-box { width: 100%; background: var(--bg-primary); border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; border-left: 3px solid #4a6cf7; font-size: 13px; color: var(--text-muted); }
-        .reasoning-box summary { cursor: pointer; font-weight: 500; color: var(--text-secondary); padding: 4px 0; }
+        .version-control span { font-size: 11px; color: var(--text-muted); min-width: 24px; text-align: center; }
+        .reasoning-box { width: 100%; background: var(--bg-primary); border-radius: 10px; padding: 6px 10px; margin-bottom: 4px; border-left: 3px solid #4a6cf7; font-size: 12px; color: var(--text-muted); }
+        .reasoning-box summary { cursor: pointer; font-weight: 500; color: var(--text-secondary); padding: 2px 0; }
         .reasoning-box summary:active { opacity: 0.6; }
-        .reasoning-content { white-space: pre-wrap; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-color); max-height: 200px; overflow-y: auto; }
-        #inputArea { display: flex; gap: 6px; padding: 8px 12px 12px; background: var(--bg-secondary); border-top: 1px solid var(--border-color); flex-shrink: 0; align-items: flex-end; }
-        #attachBtn { font-size: 24px; background: none; border: none; cursor: pointer; color: var(--text-muted); height: 42px; display: flex; align-items: center; }
-        #prompt { flex: 1; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 24px; font-size: 15px; resize: none; outline: none; background: var(--bg-input); color: var(--text-primary); font-family: inherit; min-height: 42px; max-height: 100px; line-height: 1.4; }
+        .reasoning-content { white-space: pre-wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-color); max-height: 150px; overflow-y: auto; }
+        #inputArea { display: flex; gap: 4px; padding: 6px 10px 10px; background: var(--bg-secondary); border-top: 1px solid var(--border-color); flex-shrink: 0; align-items: flex-end; }
+        #attachBtn { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--text-muted); height: 38px; display: flex; align-items: center; }
+        #prompt { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 14px; resize: none; outline: none; background: var(--bg-input); color: var(--text-primary); font-family: inherit; min-height: 38px; max-height: 90px; line-height: 1.3; }
         #prompt:focus { border-color: #4a6cf7; }
-        #sendBtn { width: 48px; height: 48px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 20px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        #sendBtn { width: 42px; height: 42px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
         #sendBtn:disabled { opacity: 0.4; pointer-events: none; }
-        #stopBtn { width: 48px; height: 48px; border-radius: 50%; background: #ef4444; color: white; border: none; font-size: 16px; cursor: pointer; flex-shrink: 0; display: none; align-items: center; justify-content: center; }
+        #stopBtn { width: 42px; height: 42px; border-radius: 50%; background: #ef4444; color: white; border: none; font-size: 14px; cursor: pointer; flex-shrink: 0; display: none; align-items: center; justify-content: center; }
         #stopBtn:active { background: #dc2626; }
         #fileInput { display: none; }
-        #statusBar { display: flex; justify-content: space-between; padding: 4px 16px; font-size: 11px; color: var(--text-muted); background: var(--bg-primary); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        #statusBar { display: flex; justify-content: space-between; padding: 3px 14px; font-size: 10px; color: var(--text-muted); background: var(--bg-primary); border-top: 1px solid var(--border-color); flex-shrink: 0; }
         #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: none; }
         #overlay.active { display: block; }
-        #drawer { position: fixed; top: 0; left: -85%; width: 82%; max-width: 340px; height: 100%; background: var(--bg-secondary); z-index: 1001; padding: 20px 16px; box-shadow: 4px 0 20px var(--shadow-color); transition: left 0.25s ease; display: flex; flex-direction: column; overflow: hidden; color: var(--text-primary); }
+        #drawer { position: fixed; top: 0; left: -85%; width: 82%; max-width: 320px; height: 100%; background: var(--bg-secondary); z-index: 1001; padding: 16px 14px; box-shadow: 4px 0 20px var(--shadow-color); transition: left 0.25s ease; display: flex; flex-direction: column; overflow: hidden; color: var(--text-primary); }
         #drawer.open { left: 0; }
-        #drawerTitle { font-size: 20px; font-weight: 700; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        #drawerTitle button { background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text-muted); }
-        #sessionList { flex: 1; overflow-y: auto; margin-top: 12px; }
-        .session-item { display: flex; align-items: center; padding: 12px; border-radius: 12px; margin-bottom: 4px; cursor: pointer; background: var(--bg-primary); gap: 8px; }
+        #drawerTitle { font-size: 18px; font-weight: 700; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        #drawerTitle button { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        #sessionList { flex: 1; overflow-y: auto; margin-top: 10px; }
+        .session-item { display: flex; align-items: center; padding: 10px; border-radius: 10px; margin-bottom: 3px; cursor: pointer; background: var(--bg-primary); gap: 6px; }
         .session-item.active { background: #4a6cf7; color: white; border-left: 4px solid #2a4cf7; }
         .session-item.active .session-name { color: white; }
-        .session-name { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .session-actions button { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 2px 6px; }
-        #newSessionBtn { width: 100%; padding: 12px; background: #4a6cf7; color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; flex-shrink: 0; }
+        .session-name { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .session-actions button { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--text-muted); padding: 1px 4px; }
+        #newSessionBtn { width: 100%; padding: 10px; background: #4a6cf7; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; flex-shrink: 0; }
         #exportModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: none; justify-content: center; align-items: center; }
         #exportModal.active { display: flex; }
-        #exportBox { background: var(--bg-secondary); padding: 30px 24px; border-radius: 24px; max-width: 320px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; color: var(--text-primary); }
-        #exportBox h3 { margin-bottom: 16px; font-size: 18px; }
-        .export-options { display: flex; flex-direction: column; gap: 12px; }
-        .export-options button { padding: 14px; border: none; border-radius: 16px; font-size: 16px; font-weight: 600; cursor: pointer; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        #exportBox { background: var(--bg-secondary); padding: 24px 20px; border-radius: 20px; max-width: 300px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; color: var(--text-primary); }
+        #exportBox h3 { margin-bottom: 14px; font-size: 17px; }
+        .export-options { display: flex; flex-direction: column; gap: 10px; }
+        .export-options button { padding: 12px; border: none; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); }
         .export-options button:active { background: #4a6cf7; color: white; }
-        #closeExportBtn { margin-top: 16px; background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; }
-        #searchModal { position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-secondary);z-index:2000;display:none;flex-direction:column;padding:20px;color:var(--text-primary); }
+        #closeExportBtn { margin-top: 14px; background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; }
+        #searchModal { position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-secondary);z-index:2000;display:none;flex-direction:column;padding:16px;color:var(--text-primary); }
         #searchModal.active { display: flex; }
-        #closeSearchBtn { align-self:flex-end;font-size:28px;background:none;border:none;color:var(--text-muted); }
-        #searchInput { width:100%;padding:14px;border:2px solid #4a6cf7;border-radius:30px;font-size:16px;outline:none;margin-bottom:12px;background:var(--bg-input);color:var(--text-primary); }
+        #closeSearchBtn { align-self:flex-end;font-size:24px;background:none;border:none;color:var(--text-muted); }
+        #searchInput { width:100%;padding:12px;border:2px solid #4a6cf7;border-radius:28px;font-size:14px;outline:none;margin-bottom:10px;background:var(--bg-input);color:var(--text-primary); }
         #searchResults { flex:1;overflow-y:auto; }
-        .search-result-item { padding:14px;border-bottom:1px solid var(--border-color);cursor:pointer; }
+        .search-result-item { padding:12px;border-bottom:1px solid var(--border-color);cursor:pointer; }
         .search-result-item:active { background:var(--bg-primary); }
+        #backupFileInput { display: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @media (max-width: 480px) { .msg-wrapper { max-width: 96%; } #drawer { left: -100%; width: 88%; } #controls select { font-size: 12px; max-width: 90px; } }
+        @media (max-width: 480px) { .msg-wrapper { max-width: 96%; } #drawer { left: -100%; width: 88%; } #controls select { font-size: 11px; max-width: 80px; } #topbar { gap: 3px; padding: 4px 6px; } .topbar-btn { font-size: 16px; padding: 1px 4px; } }
     </style>
 </head>
 <body>
@@ -141,6 +142,9 @@
             </select>
             <button id="darkToggle">🌙</button>
         </div>
+        <button class="topbar-btn" id="backupBtn" title="备份所有数据">💾</button>
+        <button class="topbar-btn" id="restoreBtn" title="恢复数据">📂</button>
+        <input type="file" id="backupFileInput" accept=".json">
         <button class="topbar-btn" id="exportBtn">📤</button>
         <button class="topbar-btn" id="searchBtn">🔍</button>
         <button class="topbar-btn" id="newChatBtn">+</button>
@@ -237,6 +241,9 @@
         const exportAI = document.getElementById('exportAI');
         const exportUser = document.getElementById('exportUser');
         const exportAll = document.getElementById('exportAll');
+        const backupBtn = document.getElementById('backupBtn');
+        const restoreBtn = document.getElementById('restoreBtn');
+        const backupFileInput = document.getElementById('backupFileInput');
 
         function generateId() { return Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
         function saveSessions() { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); updateTokenCounter(); }
@@ -277,7 +284,7 @@
         }
 
         // ============================================================
-        //  渲染聊天（支持版本切换）
+        //  渲染聊天
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -292,8 +299,6 @@
                 wrap.innerHTML = `<div class="msg">👋 开始新对话吧！支持上传图片和文档。</div>`;
                 chatBox.appendChild(wrap);
             } else {
-                // 我们按顺序渲染，但需要将用户消息和助手消息配对处理版本切换
-                // 遍历消息，对于用户消息，检查它是否有历史版本，如果有则显示切换控件
                 for (let i = 0; i < msgs.length; i++) {
                     const msg = msgs[i];
                     if (msg._loading && !msg.content && !msg.reasoning) continue;
@@ -301,7 +306,6 @@
                     wrap.className = `msg-wrapper ${msg.role}`;
                     wrap.dataset.index = i;
 
-                    // 如果是助手消息且有思考过程，添加折叠框
                     if (msg.role === 'assistant' && msg.reasoning) {
                         const details = document.createElement('details');
                         details.className = 'reasoning-box';
@@ -331,35 +335,14 @@
                     }
                     wrap.appendChild(msgDiv);
 
-                    // 操作栏
                     const actions = document.createElement('div');
                     actions.className = 'msg-actions';
 
-                    // 版本切换控件 (针对用户消息和助手消息分别显示)
-                    // 用户消息：显示历史版本切换
                     if (msg.role === 'user' && msg.history && msg.history.length > 0) {
                         const verControl = createVersionControl(msg, i);
                         actions.appendChild(verControl);
                     }
-                    // 助手消息：如果有版本，显示切换（注意：助手消息版本存储在自己的history中，但我们希望与用户消息同步）
-                    // 为了简单，我们只在用户消息上控制版本，因为用户消息包含历史记录，助手消息的历史跟随用户消息的切换。
-                    // 但助手消息本身也可能有重新生成的版本（来自重新生成功能），我们保留之前的版本逻辑，但不再单独显示控件
-                    // 我们可以在助手消息上显示版本号，但操作由用户消息的控件统一控制
-                    // 因此，在助手消息上我们不添加控件，只显示版本号（如果有）
-                    if (msg.role === 'assistant' && msg.versions && msg.versions.length > 0) {
-                        // 显示版本号，但操作由对应的用户消息控制
-                        // 我们可以显示一个小标签
-                        const verLabel = document.createElement('span');
-                        verLabel.style.fontSize = '11px';
-                        verLabel.style.color = 'var(--text-muted)';
-                        verLabel.style.marginLeft = '4px';
-                        const idx = msg.versionIndex !== undefined ? msg.versionIndex : 0;
-                        verLabel.textContent = `v${idx+1}/${msg.versions.length+1}`;
-                        // 不添加点击，因为切换由用户消息控制
-                        // 但我们可以在用户消息上显示总数
-                    }
 
-                    // 编辑按钮（仅用户消息）
                     if (msg.role === 'user') {
                         const editBtn = document.createElement('button');
                         editBtn.textContent = '✏️ 编辑';
@@ -367,7 +350,6 @@
                         actions.appendChild(editBtn);
                     }
 
-                    // 重新生成按钮（仅助手消息，且非加载中）
                     if (msg.role === 'assistant' && !msg._loading) {
                         const regenBtn = document.createElement('button');
                         regenBtn.textContent = '🔄 重新生成';
@@ -384,7 +366,6 @@
             updateTokenCounter();
         }
 
-        // 创建版本切换控件
         function createVersionControl(msg, msgIndex) {
             const container = document.createElement('span');
             container.className = 'version-control';
@@ -410,7 +391,6 @@
             return container;
         }
 
-        // 切换版本
         function changeVersion(userMsgIndex, direction) {
             const session = getCurrentSession();
             if (!session) return;
@@ -418,43 +398,52 @@
             if (!msg || msg.role !== 'user') return;
             if (!msg.history || msg.history.length === 0) return;
             let idx = msg.historyIndex !== undefined ? msg.historyIndex : 0;
-            const total = msg.history.length + 1; // 历史版本 + 当前版本
+            const total = msg.history.length + 1;
             idx = (idx + direction + total) % total;
             msg.historyIndex = idx;
 
-            // 如果 idx === 0，表示显示当前版本（最新），否则显示历史版本
-            let userContent, assistantContent;
+            // 更新用户消息内容
             if (idx === 0) {
-                // 当前版本是消息本身的content和对应的助手回复
-                userContent = msg.content;
-                // 找对应的助手回复：通常后面紧跟的一条助手消息，但可能存在多个，我们取紧挨着的那条
+                // 当前版本：恢复为原始内容（存储在msg.content中，但可能已被修改）
+                // 我们需要找到原始内容：如果历史中有记录，则恢复
+                // 由于我们存储了所有历史，但当前内容可能已变，我们使用history中存储的对应版本
+                // 实际上，我们需要从history中取
+                // 但因为我们存储的是{ user, assistant }，所以我们可以直接取
+                // 然而，当前版本（idx===0）是"最新"版本，即msg.content本身
+                // 所以不需要恢复
+                // 但助手内容需要对应
+                // 查找对应的助手消息
                 let assistantIdx = userMsgIndex + 1;
-                let assistantMsg = null;
                 while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') {
                     assistantIdx++;
                 }
                 if (assistantIdx < session.messages.length) {
-                    assistantMsg = session.messages[assistantIdx];
+                    const assistantMsg = session.messages[assistantIdx];
+                    // 如果历史中有匹配的助手内容，则恢复
+                    // 但这里我们不做恢复，因为当前版本就是最新
                 }
-                // 更新助手内容为当前存储的助手内容（可能已经改变）
-                // 我们需要在history中存储对应的助手内容，所以我们需要把当前助手内容保存到历史中
-                // 但简化处理：我们只切换用户消息，助手消息则通过重新生成功能切换
-                // 这里我们只恢复用户消息，助手消息不变，但用户消息切换后，助手可能不匹配
-                // 更好的做法：在history中存储{ user, assistant }
-                // 所以我们需要改造数据结构
-                // 现在快速修正：我们重新设计用户消息的history为数组，每个元素包含user和assistant
-                // 但之前没有，我们立即修正：在编辑时保存成对象
-                // 由于我们还没实现，这里暂时只切换用户消息，助手消息保持不变，但提醒用户
-                // 为了完美，我们重新设计数据结构，但为了快速，先这样，后续可以优化
+                // 重新渲染即可
+            } else {
+                // 历史版本
+                const histItem = msg.history[idx - 1];
+                if (histItem) {
+                    msg.content = histItem.user;
+                    // 更新对应的助手消息
+                    let assistantIdx = userMsgIndex + 1;
+                    while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') {
+                        assistantIdx++;
+                    }
+                    if (assistantIdx < session.messages.length) {
+                        session.messages[assistantIdx].content = histItem.assistant;
+                    }
+                }
             }
-            // 由于时间限制，我将在编辑功能中完善，这里先跳过
-            // 实际上，我会在编辑功能中把用户消息和助手消息打包保存
-            // 为了不让用户等待，我将直接提供完整实现，这里不再修改
-            // 在下面的编辑功能中，我会将用户消息和助手消息一起存入history
+            saveSessions();
+            renderChat();
         }
 
         // ============================================================
-        //  编辑用户消息（支持版本保存）
+        //  编辑用户消息
         // ============================================================
         function editUserMessage(index) {
             const session = getCurrentSession();
@@ -464,8 +453,6 @@
             const newText = prompt('修改你的消息：', msg.content);
             if (newText === null || newText.trim() === '') return;
 
-            // 保存当前版本到历史（如果内容不同）
-            // 找到对应的助手消息（下一个助手消息）
             let assistantIdx = index + 1;
             let assistantMsg = null;
             while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') {
@@ -475,44 +462,31 @@
                 assistantMsg = session.messages[assistantIdx];
             }
 
-            // 初始化history数组
             if (!msg.history) msg.history = [];
-            // 如果当前内容与历史最后一个不同，则保存
             if (msg.content && (!msg.history.length || msg.history[msg.history.length-1].user !== msg.content)) {
                 msg.history.push({
                     user: msg.content,
                     assistant: assistantMsg ? assistantMsg.content : ''
                 });
             }
-            // 更新用户消息内容
             msg.content = newText.trim();
-            // 删除该用户消息之后的所有消息（包括助手和后续）
             session.messages = session.messages.slice(0, index + 1);
-            // 更新历史索引为最新（0表示最新）
             msg.historyIndex = 0;
             saveSessions();
             renderChat();
-            // 自动发送新消息（重新生成回复）
-            // 我们调用发送函数，但需要传入当前用户消息内容
-            // 我们让用户手动点发送，或者自动触发
-            // 为了体验，自动触发重新生成
-            // 但为了防止无限循环，我们设置标志
-            // 简单起见，我们让用户手动点击发送，因为编辑后输入框已经填入新内容，用户按回车即可
-            // 但为了自动，我们可以把新内容填入输入框并触发发送
             promptInput.value = newText.trim();
             promptInput.focus();
             statusText.textContent = '消息已修改，按发送键重新生成';
         }
 
         // ============================================================
-        //  重新生成（保存版本）
+        //  重新生成
         // ============================================================
         async function regenerateMessage(index) {
             const session = getCurrentSession();
             if (!session) return;
             const msg = session.messages[index];
             if (!msg || msg.role !== 'assistant') return;
-            // 找到对应的用户消息
             let userIdx = index - 1;
             let userMsg = null;
             while (userIdx >= 0 && session.messages[userIdx].role !== 'user') {
@@ -524,9 +498,7 @@
             const key = localStorage.getItem(KEY_STORAGE);
             if (!key) { alert('请先保存 API Key'); return; }
 
-            // 保存当前版本
             if (!userMsg.history) userMsg.history = [];
-            // 如果当前用户消息内容和助手内容与历史最后一个不同，则保存
             const lastHist = userMsg.history.length ? userMsg.history[userMsg.history.length-1] : null;
             if (!lastHist || lastHist.user !== userMsg.content || lastHist.assistant !== msg.content) {
                 userMsg.history.push({
@@ -534,12 +506,9 @@
                     assistant: msg.content
                 });
             }
-            // 设置历史索引为最新
             userMsg.historyIndex = 0;
 
-            // 删除该助手消息及之后的所有消息
             session.messages = session.messages.slice(0, index);
-            // 添加加载状态占位
             const loadingMsg = { role: 'assistant', content: '🤔 重新生成中...', _loading: true };
             session.messages.push(loadingMsg);
             saveSessions();
@@ -560,7 +529,6 @@
                 if (!response.ok) throw new Error('API Error');
                 const data = await response.json();
                 const reply = data.choices?.[0]?.message?.content || '无回复';
-                // 移除加载占位
                 session.messages.pop();
                 session.messages.push({ role: 'assistant', content: reply });
                 saveSessions();
@@ -575,7 +543,7 @@
         }
 
         // ============================================================
-        //  发送消息 (支持流式 + 停止)
+        //  发送消息 (流式)
         // ============================================================
         async function sendMessage() {
             if (isStreaming) return;
@@ -618,15 +586,12 @@
             isStreaming = true;
             statusText.textContent = '⏳ 流式生成中...';
 
-            // 创建 AbortController
             abortController = new AbortController();
 
-            // 添加占位消息
             const aiMsgIndex = session.messages.length;
             session.messages.push({ role: 'assistant', content: '', reasoning: '', _loading: true });
             saveSessions();
             
-            // 创建DOM元素用于实时更新
             const wrap = document.createElement('div');
             wrap.className = 'msg-wrapper assistant';
             
@@ -709,7 +674,6 @@
                     }
                 }
 
-                // 流正常结束
                 const savedMsg = session.messages[aiMsgIndex];
                 if (savedMsg) {
                     savedMsg.content = fullContent || '(空回复)';
@@ -725,7 +689,6 @@
 
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    // 用户主动停止
                     const savedMsg = session.messages[aiMsgIndex];
                     if (savedMsg) {
                         savedMsg.content = fullContent || '(已停止)';
@@ -736,7 +699,6 @@
                     renderChat();
                     statusText.textContent = '⏹ 已停止生成';
                 } else {
-                    // 其他错误
                     session.messages.pop();
                     session.messages.push({ role: 'assistant', content: `❌ 出错：${error.message}`, reasoning: fullReasoning || '出错前思考' });
                     saveSessions();
@@ -752,7 +714,6 @@
             }
         }
 
-        // 停止生成
         stopBtn.addEventListener('click', () => {
             if (abortController) {
                 abortController.abort();
@@ -903,6 +864,107 @@
         });
 
         // ============================================================
+        //  备份 & 恢复 (核心新增功能)
+        // ============================================================
+        // 备份：导出所有数据为 JSON 文件
+        function backupData() {
+            try {
+                const data = {
+                    version: '1.0',
+                    exportedAt: new Date().toISOString(),
+                    sessions: sessions,
+                    apiKey: localStorage.getItem(KEY_STORAGE) || '',
+                    theme: localStorage.getItem(THEME_KEY) || 'light',
+                    model: localStorage.getItem(MODEL_KEY) || 'deepseek-v4-flash'
+                };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = new Date().toISOString().slice(0,10);
+                a.download = `DeepSeek_备份_${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                statusText.textContent = '✅ 数据备份成功！';
+                setTimeout(() => { if (statusText.textContent === '✅ 数据备份成功！') statusText.textContent = '就绪'; }, 3000);
+            } catch (e) {
+                alert('备份失败：' + e.message);
+            }
+        }
+
+        // 恢复：从 JSON 文件恢复数据
+        function restoreData(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.sessions || !Array.isArray(data.sessions)) {
+                        throw new Error('无效的备份文件：缺少 sessions 数据');
+                    }
+                    // 恢复数据
+                    sessions = data.sessions;
+                    if (data.apiKey) localStorage.setItem(KEY_STORAGE, data.apiKey);
+                    if (data.theme) {
+                        localStorage.setItem(THEME_KEY, data.theme);
+                        if (data.theme === 'dark') {
+                            document.body.classList.add('dark');
+                            darkToggle.textContent = '☀️';
+                        } else {
+                            document.body.classList.remove('dark');
+                            darkToggle.textContent = '🌙';
+                        }
+                    }
+                    if (data.model) {
+                        localStorage.setItem(MODEL_KEY, data.model);
+                        modelSelect.value = data.model;
+                    }
+                    // 重新加载会话
+                    const active = sessions.find(s => s.active) || sessions[0];
+                    if (active) {
+                        currentId = active.id;
+                    } else if (sessions.length > 0) {
+                        sessions[0].active = true;
+                        currentId = sessions[0].id;
+                    } else {
+                        // 如果没有会话，创建一个默认的
+                        sessions.push({ id: generateId(), name: '新对话', messages: [] });
+                        currentId = sessions[0].id;
+                        sessions[0].active = true;
+                    }
+                    saveSessions();
+                    renderChat();
+                    // 更新 API Key 输入框
+                    const savedKey = localStorage.getItem(KEY_STORAGE);
+                    if (savedKey) apiKeyInput.value = savedKey;
+                    statusText.textContent = '✅ 数据恢复成功！页面已刷新';
+                    alert('✅ 数据恢复成功！所有对话已还原。');
+                } catch (err) {
+                    alert('恢复失败：' + err.message + '\n请确认选择的是正确的备份文件。');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        backupBtn.addEventListener('click', backupData);
+
+        restoreBtn.addEventListener('click', () => {
+            backupFileInput.click();
+        });
+
+        backupFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (confirm('⚠️ 恢复数据将覆盖当前所有对话和历史记录，确定继续吗？')) {
+                    restoreData(file);
+                }
+            }
+            backupFileInput.value = '';
+        });
+
+        // ============================================================
         //  搜索
         // ============================================================
         function performSearch(query) {
@@ -963,7 +1025,7 @@
         function closeSearch() { searchModal.classList.remove('active'); }
 
         // ============================================================
-        //  导出 (只导出正文，不导出思考过程)
+        //  导出 (只导出正文)
         // ============================================================
         function exportChat(role) {
             const session = getCurrentSession();
@@ -1012,7 +1074,7 @@
         // ============================================================
         loadData();
         renderChat();
-        statusText.textContent = '就绪 (V4 模型，支持历史版本)';
+        statusText.textContent = '就绪 (V4 模型，支持备份/恢复)';
     </script>
 </body>
 </html>

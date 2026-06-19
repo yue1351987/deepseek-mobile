@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My DeepSeek</title>
     <style>
-        /* ========== 基础变量（与之前一致） ========== */
         :root {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
@@ -184,17 +183,68 @@
         .msg .error-detail { font-size: 13px; color: #f87171; background: rgba(239,68,68,0.15); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 6px; border-left: 3px solid var(--accent-red); white-space: pre-wrap; word-break: break-all; }
         .cursor-blink::after { content: '▊'; animation: blink 0.9s step-end infinite; color: var(--accent-blue); margin-left: 2px; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
-        .msg-actions { display: flex; gap: 8px; margin-top: 4px; font-size: 12px; opacity: 0.7; flex-wrap: wrap; align-items: center; }
-        .msg-actions button { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 8px; border-radius: 20px; font-size: 12px; transition: background var(--transition); }
+        .msg-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            font-size: 12px;
+            opacity: 0.7;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .msg-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            transition: background var(--transition);
+        }
         .msg-actions button:hover { background: var(--bg-input); color: var(--text-primary); }
         .msg-actions .fav-btn { font-size: 14px; padding: 2px 6px; }
         .msg-actions .fav-btn.favorited { color: #f59e0b; }
-        .version-control { display: inline-flex; align-items: center; gap: 2px; background: var(--bg-input); border-radius: 20px; padding: 0 6px; border: 1px solid var(--border-light); }
-        .version-control button { background: none; border: none; font-size: 14px; cursor: pointer; padding: 0 4px; color: var(--text-muted); }
+        .version-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            background: var(--bg-input);
+            border-radius: 20px;
+            padding: 0 6px;
+            border: 1px solid var(--border-light);
+        }
+        .version-control button {
+            background: none;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0 4px;
+            color: var(--text-muted);
+        }
         .version-control button:hover { color: var(--text-primary); }
-        .version-control span { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: center; }
-        .reasoning-box { width: 100%; background: var(--bg-input); border-radius: var(--radius-sm); padding: 8px 14px; margin-bottom: 4px; border-left: 3px solid var(--accent-blue); font-size: calc(var(--font-size-msg) - 2px); color: var(--text-muted); }
-        .reasoning-box summary { cursor: pointer; font-weight: 500; color: var(--text-secondary); padding: 2px 0; }
+        .version-control span {
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 28px;
+            text-align: center;
+        }
+        .reasoning-box {
+            width: 100%;
+            background: var(--bg-input);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            margin-bottom: 4px;
+            border-left: 3px solid var(--accent-blue);
+            font-size: calc(var(--font-size-msg) - 2px);
+            color: var(--text-muted);
+        }
+        .reasoning-box summary {
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding: 2px 0;
+        }
         .reasoning-box summary:hover { opacity: 0.8; }
         .reasoning-content { white-space: pre-wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-light); max-height: 150px; overflow-y: auto; }
 
@@ -939,7 +989,7 @@
 
     <script>
         // ============================================================
-        // 数据层（全部保留）
+        // 数据层
         // ============================================================
         let sessions = [];
         let folders = [];
@@ -1282,6 +1332,8 @@
             updateStorageInfo();
             updateTOC();
             updateConvStatus();
+            // ===== 修复：确保发送按钮绑定事件 =====
+            document.getElementById('sendBtn').onclick = sendMessage;
         }
 
         // ============================================================
@@ -1381,7 +1433,7 @@
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
-        // 渲染聊天（全部保留）
+        // 渲染聊天（核心修复：用户和助手各自独立版本控制）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1442,8 +1494,15 @@
                     const actions = document.createElement('div');
                     actions.className = 'msg-actions';
 
+                    // ===== 用户消息版本控制 =====
                     if (msg.role === 'user' && msg.history && msg.history.length > 0) {
-                        const verControl = createVersionControl(msg, i);
+                        const verControl = createVersionControl(msg, i, 'user');
+                        actions.appendChild(verControl);
+                    }
+
+                    // ===== 助手消息版本控制（独立） =====
+                    if (msg.role === 'assistant' && msg.history && msg.history.length > 0) {
+                        const verControl = createVersionControl(msg, i, 'assistant');
                         actions.appendChild(verControl);
                     }
 
@@ -1486,40 +1545,59 @@
             updateConvStatus();
         }
 
-        function createVersionControl(msg, msgIndex) {
+        // ============================================================
+        // 版本控制（独立于用户/助手）
+        // ============================================================
+        function createVersionControl(msg, msgIndex, role) {
             const container = document.createElement('span');
             container.className = 'version-control';
             const leftBtn = document.createElement('button');
             leftBtn.textContent = '◀';
-            leftBtn.addEventListener('click', (e) => { e.stopPropagation(); changeVersion(msgIndex, -1); });
+            leftBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                changeVersion(msgIndex, -1, role);
+            });
             const rightBtn = document.createElement('button');
             rightBtn.textContent = '▶';
-            rightBtn.addEventListener('click', (e) => { e.stopPropagation(); changeVersion(msgIndex, 1); });
+            rightBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                changeVersion(msgIndex, 1, role);
+            });
             const label = document.createElement('span');
             const total = (msg.history ? msg.history.length : 0) + 1;
             const current = msg.historyIndex !== undefined ? msg.historyIndex : 0;
             label.textContent = `${current+1}/${total}`;
-            container.appendChild(leftBtn); container.appendChild(label); container.appendChild(rightBtn);
+            container.appendChild(leftBtn);
+            container.appendChild(label);
+            container.appendChild(rightBtn);
             return container;
         }
 
-        function changeVersion(userMsgIndex, direction) {
+        // ============================================================
+        // 切换版本（独立于用户/助手）
+        // ============================================================
+        function changeVersion(msgIndex, direction, role) {
             const session = getCurrentSession();
             if (!session) return;
-            const msg = session.messages[userMsgIndex];
-            if (!msg || msg.role !== 'user') return;
+            const msg = session.messages[msgIndex];
+            if (!msg || msg.role !== role) return;
             if (!msg.history || msg.history.length === 0) return;
+
             let idx = msg.historyIndex !== undefined ? msg.historyIndex : 0;
             const total = msg.history.length + 1;
             idx = (idx + direction + total) % total;
             msg.historyIndex = idx;
-            if (idx === 0) { /* current */ } else {
+
+            if (idx === 0) {
+                // 当前版本，不需要恢复
+            } else {
                 const histItem = msg.history[idx - 1];
                 if (histItem) {
-                    msg.content = histItem.user;
-                    let assistantIdx = userMsgIndex + 1;
-                    while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') assistantIdx++;
-                    if (assistantIdx < session.messages.length) session.messages[assistantIdx].content = histItem.assistant;
+                    msg.content = histItem.content;
+                    // 如果是助手消息，还要恢复 reasoning
+                    if (role === 'assistant' && histItem.reasoning !== undefined) {
+                        msg.reasoning = histItem.reasoning;
+                    }
                 }
             }
             saveSessions();
@@ -1527,7 +1605,7 @@
         }
 
         // ============================================================
-        // 编辑 & 重新生成
+        // 编辑用户消息（保存用户历史）
         // ============================================================
         function editUserMessage(index) {
             const session = getCurrentSession();
@@ -1537,54 +1615,70 @@
             const newText = prompt('修改你的消息：', msg.content);
             if (newText === null || newText.trim() === '') return;
 
-            let assistantIdx = index + 1;
-            let assistantMsg = null;
-            while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') assistantIdx++;
-            if (assistantIdx < session.messages.length) assistantMsg = session.messages[assistantIdx];
-
+            // 保存当前版本到历史
             if (!msg.history) msg.history = [];
-            if (msg.content && (!msg.history.length || msg.history[msg.history.length-1].user !== msg.content)) {
-                msg.history.push({ user: msg.content, assistant: assistantMsg ? assistantMsg.content : '' });
+            if (msg.content) {
+                msg.history.push({ content: msg.content });
             }
             msg.content = newText.trim();
-            session.messages = session.messages.slice(0, index + 1);
             msg.historyIndex = 0;
+
+            // 删除该用户消息之后的所有消息（包括助手和后续）
+            session.messages = session.messages.slice(0, index + 1);
             saveSessions();
             renderChat();
             promptInput.value = newText.trim();
             promptInput.focus();
-            statusShort.textContent = '消息已修改';
-            setTimeout(() => { if (statusShort.textContent === '消息已修改') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
+            statusShort.textContent = '消息已修改，按发送键重新生成';
+            updateConvStatus();
         }
 
+        // ============================================================
+        // 重新生成助手消息（保存助手历史）
+        // ============================================================
         async function regenerateMessage(index) {
             const session = getCurrentSession();
             if (!session) return;
             const msg = session.messages[index];
             if (!msg || msg.role !== 'assistant') return;
+
+            // 找到对应的用户消息（上一条）
             let userIdx = index - 1;
             let userMsg = null;
-            while (userIdx >= 0 && session.messages[userIdx].role !== 'user') userIdx--;
-            if (userIdx < 0) { alert('找不到对应的用户消息'); return; }
+            while (userIdx >= 0 && session.messages[userIdx].role !== 'user') {
+                userIdx--;
+            }
+            if (userIdx < 0) {
+                alert('找不到对应的用户消息');
+                return;
+            }
             userMsg = session.messages[userIdx];
 
             const key = localStorage.getItem(KEY_STORAGE);
-            if (!key) { alert('请先保存 API Key'); return; }
-
-            if (!userMsg.history) userMsg.history = [];
-            const lastHist = userMsg.history.length ? userMsg.history[userMsg.history.length-1] : null;
-            if (!lastHist || lastHist.user !== userMsg.content || lastHist.assistant !== msg.content) {
-                userMsg.history.push({ user: userMsg.content, assistant: msg.content });
+            if (!key) {
+                alert('请先保存 API Key');
+                return;
             }
-            userMsg.historyIndex = 0;
 
-            session.messages = session.messages.slice(0, index);
+            // 保存当前助手消息到历史
+            if (!msg.history) msg.history = [];
+            const currentContent = msg.content;
+            const currentReasoning = msg.reasoning || '';
+            // 避免重复保存相同内容
+            if (currentContent && (!msg.history.length || msg.history[msg.history.length-1].content !== currentContent)) {
+                msg.history.push({ content: currentContent, reasoning: currentReasoning });
+            }
+            msg.historyIndex = 0;
+
+            // 创建加载状态
             const loadingMsg = { role: 'assistant', content: '🤔 重新生成中...', _loading: true };
-            session.messages.push(loadingMsg);
+            // 替换当前消息为加载状态
+            session.messages[index] = loadingMsg;
             saveSessions();
             renderChat();
 
             try {
+                // 构建历史上下文（包含用户消息及之前的所有消息，不包含当前助手）
                 const history = session.messages.slice(0, index);
                 const model = mode === 'flash' ? 'deepseek-v4-flash' : 'deepseek-v4-pro';
                 const requestBody = {
@@ -1601,23 +1695,48 @@
 
                 const response = await fetch('https://api.deepseek.com/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
                     body: JSON.stringify(requestBody)
                 });
-                if (!response.ok) throw new Error('API Error');
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(`API错误(${response.status}): ${errData.error?.message || '请检查Key'}`);
+                }
+
                 const data = await response.json();
                 const reply = data.choices?.[0]?.message?.content || '无回复';
-                session.messages.pop();
-                session.messages.push({ role: 'assistant', content: reply });
+                // 注意：非流式模式下，思考过程不会单独返回
+                const reasoning = data.choices?.[0]?.message?.reasoning || '';
+
+                // 更新助手消息
+                session.messages[index] = {
+                    role: 'assistant',
+                    content: reply,
+                    reasoning: reasoning || '',
+                    _loading: false,
+                    history: msg.history,
+                    historyIndex: 0
+                };
                 saveSessions();
                 renderChat();
                 statusShort.textContent = '✅ 重新生成完成';
                 setTimeout(() => { if (statusShort.textContent === '✅ 重新生成完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
-            } catch (e) {
-                session.messages.pop();
-                session.messages.push({ role: 'assistant', content: `❌ 失败: ${e.message}` });
+
+            } catch (error) {
+                session.messages[index] = {
+                    role: 'assistant',
+                    content: `❌ 失败: ${error.message}`,
+                    _loading: false,
+                    isError: true,
+                    errorDetail: error.message
+                };
                 saveSessions();
                 renderChat();
+                statusShort.textContent = '⚠️ 生成失败';
             }
         }
 
@@ -1642,11 +1761,10 @@
         };
 
         // ============================================================
-        // 发送消息 - 使用调试版的可靠逻辑
+        // 发送消息（核心逻辑）
         // ============================================================
         async function sendMessage() {
             console.log('[sendMessage] 开始执行');
-
             // 检查是否正在流式
             if (isStreaming) {
                 const errMsg = '⏳ 正在生成中，请等待完成或双击标题重置';
@@ -2007,7 +2125,7 @@
         });
 
         // ============================================================
-        // 文件夹 & 会话管理（全部保留）
+        // 文件夹 & 会话管理
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);

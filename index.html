@@ -714,6 +714,7 @@
             gap: 6px;
             transition: background var(--transition);
         }
+        .folder-item.drag-over { background: var(--accent-blue); opacity: 0.6; }
         .folder-item:hover, .session-item:hover { background: var(--bg-input); }
         .folder-item.active, .session-item.active {
             background: var(--accent-blue);
@@ -755,6 +756,11 @@
             color: var(--text-muted);
             margin-left: 4px;
         }
+        .favorite-badge {
+            font-size: 12px;
+            color: #f59e0b;
+            margin-left: 4px;
+        }
         .folder-item .session-name { font-weight: 600; color: var(--accent-blue); }
         .folder-item.active .session-name { color: white; }
 
@@ -767,6 +773,22 @@
             border-top: 1px solid var(--border-light);
             padding-top: 10px;
         }
+        #drawerFooter .footer-row {
+            display: flex;
+            gap: 6px;
+        }
+        #drawerFooter .footer-row button {
+            flex: 1;
+            padding: 8px 0;
+            background: var(--bg-input);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        #drawerFooter .footer-row button:active { background: var(--border-light); }
         #storageInfo {
             font-size: 12px;
             color: var(--text-muted);
@@ -792,18 +814,81 @@
             border-radius: 10px;
             transition: width 0.3s;
         }
-        #drawerFooter button {
-            width: 100%;
-            padding: 8px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-light);
+
+        /* ========== 收藏模态框 ========== */
+        #favoriteModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 1500;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        #favoriteModal.active { display: flex; }
+        #favoritePanel {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            max-width: 360px;
+            width: 90%;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 20px 24px;
+            box-shadow: var(--shadow-heavy);
+            color: var(--text-primary);
+            animation: slideUp 0.25s ease;
+        }
+        #favoritePanel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #favoritePanel h2 button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        #favoriteList {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        #favoriteList .fav-item {
+            padding: 8px 12px;
             border-radius: var(--radius-sm);
-            font-size: 13px;
-            color: var(--text-secondary);
+            background: var(--bg-input);
             cursor: pointer;
             transition: background var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        #drawerFooter button:active { background: var(--border-light); }
+        #favoriteList .fav-item:hover { background: var(--border-light); }
+        #favoriteList .fav-item .fav-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #favoriteList .fav-item .fav-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #favoriteList .fav-item .fav-remove:active { color: var(--accent-red); }
+        .fav-empty {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px 0;
+        }
 
         /* ========== 搜索模态框 ========== */
         #searchModal {
@@ -1038,6 +1123,17 @@
         </div>
     </div>
 
+    <!-- 收藏模态框 -->
+    <div id="favoriteModal">
+        <div id="favoritePanel">
+            <h2>
+                ⭐ 收藏的对话
+                <button id="closeFavoriteBtn">✕</button>
+            </h2>
+            <div id="favoriteList"></div>
+        </div>
+    </div>
+
     <!-- 搜索模态框 -->
     <div id="searchModal">
         <div class="header">
@@ -1079,7 +1175,10 @@
                 <span class="bar-bg"><span class="bar-fill" id="storageBar" style="width:0%"></span></span>
                 <span id="storagePercent">0%</span>
             </div>
-            <button id="settingsBtn">⚙️ 设置</button>
+            <div class="footer-row">
+                <button id="settingsBtn">⚙️ 设置</button>
+                <button id="favoriteBtn">⭐ 收藏</button>
+            </div>
         </div>
     </div>
 
@@ -1149,12 +1248,15 @@
         const statusTokens = document.getElementById('statusTokens');
         const statusChars = document.getElementById('statusChars');
         const tokensGroup = document.getElementById('tokensGroup');
-        const charsGroup = document.getElementById('charsGroup'); // 实际已移动到左侧，但保留引用
         const storageText = document.getElementById('storageText');
         const storageBar = document.getElementById('storageBar');
         const storagePercent = document.getElementById('storagePercent');
         const tocBtn = document.getElementById('tocBtn');
         const tocPanel = document.getElementById('tocPanel');
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const favoriteModal = document.getElementById('favoriteModal');
+        const closeFavoriteBtn = document.getElementById('closeFavoriteBtn');
+        const favoriteList = document.getElementById('favoriteList');
 
         // 设置面板
         const settingsBtn = document.getElementById('settingsBtn');
@@ -1203,8 +1305,15 @@
         }
 
         function updateCharCounter() {
-            const len = promptInput.value.length;
-            statusChars.textContent = `${len} 字符`;
+            const text = promptInput.value;
+            const len = text.length;
+            const tokens = estimateTokens(text);
+            if (showChars) {
+                statusChars.textContent = `${len} 字符 / ~${tokens} tokens`;
+                statusChars.style.display = 'inline';
+            } else {
+                statusChars.style.display = 'none';
+            }
         }
 
         function updateStorageInfo() {
@@ -1275,7 +1384,7 @@
             const rawSessions = localStorage.getItem(STORAGE_SESSIONS_KEY);
             if (rawSessions) { try { sessions = JSON.parse(rawSessions); } catch { sessions = []; } }
             if (!sessions.length) {
-                sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false });
+                sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false, favorited: false });
                 saveSessions();
             }
             const active = sessions.find(s => s.active) || sessions[0];
@@ -1298,7 +1407,6 @@
                 statusModel.textContent = '专家';
             }
             settingsModeSelect.value = mode;
-            // 深度思考开关不再禁用
             updateDeepThinkingUI();
         }
 
@@ -1345,6 +1453,61 @@
         }
 
         // ============================================================
+        //  收藏功能
+        // ============================================================
+        function toggleFavorite(sessionId) {
+            const session = sessions.find(s => s.id === sessionId);
+            if (!session) return;
+            session.favorited = !session.favorited;
+            saveSessions();
+            renderDrawer();
+            updateFavoriteList();
+            statusShort.textContent = session.favorited ? '⭐ 已收藏' : '⭐ 已取消收藏';
+            setTimeout(() => { if (statusShort.textContent.includes('收藏')) statusShort.textContent = '就绪'; }, 1500);
+        }
+
+        function updateFavoriteList() {
+            const favs = sessions.filter(s => s.favorited);
+            favoriteList.innerHTML = '';
+            if (favs.length === 0) {
+                favoriteList.innerHTML = '<div class="fav-empty">暂无收藏的对话</div>';
+                return;
+            }
+            favs.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'fav-item';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'fav-name';
+                nameSpan.textContent = s.name || '未命名';
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'fav-remove';
+                removeBtn.textContent = '✕';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(s.id);
+                });
+                div.appendChild(nameSpan);
+                div.appendChild(removeBtn);
+                div.addEventListener('click', () => {
+                    closeFavoriteModal();
+                    switchSession(s.id);
+                });
+                favoriteList.appendChild(div);
+            });
+        }
+
+        function openFavoriteModal() {
+            updateFavoriteList();
+            favoriteModal.classList.add('active');
+        }
+        function closeFavoriteModal() {
+            favoriteModal.classList.remove('active');
+        }
+        favoriteBtn.addEventListener('click', openFavoriteModal);
+        closeFavoriteBtn.addEventListener('click', closeFavoriteModal);
+        favoriteModal.addEventListener('click', (e) => { if (e.target === favoriteModal) closeFavoriteModal(); });
+
+        // ============================================================
         //  目录功能 (TOC)
         // ============================================================
         function updateTOC() {
@@ -1360,21 +1523,16 @@
                 const div = document.createElement('div');
                 div.className = 'toc-item';
                 const preview = msg.content.length > 10 ? msg.content.slice(0, 10) + '…' : msg.content;
-                const index = session.messages.indexOf(msg); // 实际索引
+                const index = session.messages.indexOf(msg);
                 div.innerHTML = `<span class="toc-index">#${idx+1}</span> ${preview}`;
                 div.addEventListener('click', () => {
-                    // 滚动到该消息
                     const wrappers = chatBox.querySelectorAll('.msg-wrapper');
-                    // 找到第 index 个 .msg-wrapper
                     if (wrappers[index]) {
                         wrappers[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        // 短暂高亮
                         wrappers[index].style.transition = 'background 0.3s';
                         wrappers[index].style.background = 'var(--highlight-bg, #fef08a)';
                         setTimeout(() => wrappers[index].style.background = '', 1500);
                     }
-                    // 关闭面板（可选）
-                    // closeTOC();
                 });
                 tocPanel.appendChild(div);
             });
@@ -1385,12 +1543,6 @@
             tocBtn.classList.toggle('active', isOpen);
             if (isOpen) updateTOC();
         }
-
-        function closeTOC() {
-            tocPanel.classList.remove('open');
-            tocBtn.classList.remove('active');
-        }
-
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
@@ -1475,7 +1627,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
             renderDrawer();
             updateTokenCounter();
-            updateTOC(); // 更新目录
+            updateTOC();
         }
 
         function createVersionControl(msg, msgIndex) {
@@ -1865,8 +2017,20 @@
         });
 
         // ============================================================
-        //  文件夹 & 会话管理
+        //  文件夹 & 会话管理 (含重命名、拖拽)
         // ============================================================
+        function renameSession(sessionId) {
+            const session = sessions.find(s => s.id === sessionId);
+            if (!session) return;
+            const newName = prompt('重命名对话：', session.name);
+            if (newName && newName.trim() !== '') {
+                session.name = newName.trim();
+                saveSessions();
+                renderDrawer();
+                if (session.id === currentId) renderChat(); // 更新标题
+            }
+        }
+
         function createFolder() {
             const name = prompt('请输入文件夹名称：', '新文件夹');
             if (!name || name.trim() === '') return;
@@ -1923,7 +2087,11 @@
 
         function moveSessionToFolder(sessionId, folderId) {
             const session = sessions.find(s => s.id === sessionId);
-            if (session) { session.folderId = folderId; saveSessions(); renderDrawer(); }
+            if (session) {
+                session.folderId = folderId;
+                saveSessions();
+                renderDrawer();
+            }
         }
 
         function exportSingleSession(sessionId) {
@@ -1944,7 +2112,7 @@
         }
 
         // ============================================================
-        //  渲染抽屉
+        //  渲染抽屉 (支持重命名、拖拽)
         // ============================================================
         function renderDrawer() {
             sessionListContainer.innerHTML = '';
@@ -1958,6 +2126,14 @@
             function createSessionItem(session) {
                 const div = document.createElement('div');
                 div.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
+                div.draggable = true;
+                div.dataset.sessionId = session.id;
+                div.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', session.id);
+                    div.style.opacity = '0.5';
+                });
+                div.addEventListener('dragend', () => { div.style.opacity = '1'; });
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'session-name';
                 nameSpan.textContent = session.name || '未命名';
@@ -1967,8 +2143,34 @@
                     badge.textContent = '📌';
                     nameSpan.appendChild(badge);
                 }
+                if (session.favorited) {
+                    const badge = document.createElement('span');
+                    badge.className = 'favorite-badge';
+                    badge.textContent = '⭐';
+                    nameSpan.appendChild(badge);
+                }
                 const actions = document.createElement('div');
                 actions.className = 'item-actions';
+
+                // 重命名按钮
+                const renameBtn = document.createElement('button');
+                renameBtn.textContent = '✏️';
+                renameBtn.title = '重命名对话';
+                renameBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    renameSession(session.id);
+                });
+                actions.appendChild(renameBtn);
+
+                // 收藏切换
+                const favBtn = document.createElement('button');
+                favBtn.textContent = session.favorited ? '⭐' : '☆';
+                favBtn.title = '收藏/取消收藏';
+                favBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(session.id);
+                });
+                actions.appendChild(favBtn);
 
                 const exportBtn = document.createElement('button');
                 exportBtn.textContent = '📤';
@@ -2016,6 +2218,24 @@
 
                 const folderDiv = document.createElement('div');
                 folderDiv.className = 'folder-item';
+                folderDiv.dataset.folderId = folder.id;
+                // 拖拽事件
+                folderDiv.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    folderDiv.classList.add('drag-over');
+                });
+                folderDiv.addEventListener('dragleave', () => {
+                    folderDiv.classList.remove('drag-over');
+                });
+                folderDiv.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    folderDiv.classList.remove('drag-over');
+                    const sessionId = e.dataTransfer.getData('text/plain');
+                    if (sessionId) {
+                        moveSessionToFolder(sessionId, folder.id);
+                    }
+                });
+
                 const icon = document.createElement('span');
                 icon.className = 'folder-icon';
                 icon.textContent = '📁';
@@ -2121,7 +2341,7 @@
 
         function createNewSession() {
             const count = sessions.length + 1;
-            const newSession = { id: generateId(), name: `对话 ${count}`, messages: [], folderId: null, pinned: false, active: true };
+            const newSession = { id: generateId(), name: `对话 ${count}`, messages: [], folderId: null, pinned: false, favorited: false, active: true };
             sessions.forEach(s => delete s.active);
             sessions.push(newSession);
             currentId = newSession.id;
@@ -2341,7 +2561,7 @@
                     if (active) { currentId = active.id; }
                     else if (sessions.length > 0) { sessions[0].active = true; currentId = sessions[0].id; }
                     else {
-                        sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false, active: true });
+                        sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false, favorited: false, active: true });
                         currentId = sessions[0].id;
                     }
                     saveSessions();
@@ -2368,7 +2588,7 @@
         });
 
         // ============================================================
-        //  深度思考开关（始终可用）
+        //  深度思考开关
         // ============================================================
         deepSwitch.addEventListener('click', () => {
             deepThinking = !deepThinking;
@@ -2475,8 +2695,7 @@
         //  字数统计（输入实时）
         // ============================================================
         promptInput.addEventListener('input', function() {
-            const len = this.value.length;
-            statusChars.textContent = `${len} 字符`;
+            updateCharCounter();
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         });

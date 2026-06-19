@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My DeepSeek · 双层版本</title>
+    <title>My DeepSeek</title>
+    <!-- 样式部分（与之前相同，略作精简） -->
     <style>
         /* ========== 基础变量 ========== */
         :root {
@@ -1355,11 +1356,6 @@
                 s.turns.forEach(t => {
                     if (!t.inputVersions) t.inputVersions = [];
                     if (t.inputVersions.length === 0) {
-                        // 向后兼容：如果有旧数据，迁移
-                        if (t._legacy) {
-                            // 旧数据迁移逻辑略
-                        }
-                        // 保证至少有一个空输入版本
                         t.inputVersions.push({
                             id: generateId(),
                             content: '',
@@ -1524,7 +1520,6 @@
                     // --- 用户消息操作栏 ---
                     const userActions = document.createElement('div');
                     userActions.className = 'msg-actions';
-                    // 输入版本切换（如果有多版本）
                     if (turn.inputVersions.length > 1) {
                         const verControl = createInputVersionControl(turn, turnIdx);
                         userActions.appendChild(verControl);
@@ -1555,6 +1550,7 @@
                     if (ov.content) {
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
+                        // 只有存在 reasoning 且 showReasoning 开启时才显示
                         if (ov.reasoning && showReasoning) {
                             const details = document.createElement('details');
                             details.className = 'reasoning-box';
@@ -1575,7 +1571,6 @@
 
                         const assistantActions = document.createElement('div');
                         assistantActions.className = 'msg-actions';
-                        // 输出版本切换（如果有多版本）
                         if (iv.outputVersions.length > 1) {
                             const verControlAI = createOutputVersionControl(turn, turnIdx, ivIdx);
                             assistantActions.appendChild(verControlAI);
@@ -1601,7 +1596,7 @@
                         loadingWrap.appendChild(loadingMsgDiv);
                         turnWrapper.appendChild(loadingWrap);
                     } else {
-                        // 没有任何输出，显示一个占位提示（可点击重新生成）
+                        // 没有任何输出，显示占位
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
                         const placeholder = document.createElement('div');
@@ -1633,7 +1628,7 @@
         }
 
         // ============================================================
-        // 输入版本控制组件
+        // 版本控制组件
         // ============================================================
         function createInputVersionControl(turn, turnIdx) {
             const container = document.createElement('span');
@@ -1660,9 +1655,6 @@
             return container;
         }
 
-        // ============================================================
-        // 输出版本控制组件
-        // ============================================================
         function createOutputVersionControl(turn, turnIdx, inputIdx) {
             const container = document.createElement('span');
             container.className = 'version-control';
@@ -1690,7 +1682,7 @@
         }
 
         // ============================================================
-        // 切换输入版本
+        // 切换版本
         // ============================================================
         function switchInputVersion(turnIdx, direction) {
             const session = getCurrentSession();
@@ -1702,7 +1694,6 @@
             let idx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
             idx = (idx + direction + total) % total;
             turn.selectedInputIdx = idx;
-            // 自动选中该输入版本的最后一个输出
             const iv = turn.inputVersions[idx];
             iv.selectedOutputIdx = iv.outputVersions.length - 1;
             if (iv.selectedOutputIdx < 0) iv.selectedOutputIdx = 0;
@@ -1710,9 +1701,6 @@
             renderChat();
         }
 
-        // ============================================================
-        // 切换输出版本（在同一输入版本下）
-        // ============================================================
         function switchOutputVersion(turnIdx, inputIdx, direction) {
             const session = getCurrentSession();
             if (!session) return;
@@ -1743,7 +1731,6 @@
             const newText = prompt('修改你的消息：', iv.content);
             if (newText === null || newText.trim() === '') return;
 
-            // 新建输入版本
             const newIv = {
                 id: generateId(),
                 content: newText.trim(),
@@ -1752,7 +1739,6 @@
             };
             turn.inputVersions.push(newIv);
             turn.selectedInputIdx = turn.inputVersions.length - 1;
-            // 自动生成第一个输出（调用重新生成）
             saveSessions();
             renderChat();
             regenerateMessage(turnIdx);
@@ -1773,7 +1759,6 @@
                 return;
             }
 
-            // 新增一个输出版本（空内容，置 loading 状态）
             const newOv = {
                 content: '',
                 reasoning: '',
@@ -1785,12 +1770,11 @@
             saveSessions();
             renderChat();
 
-            // 执行请求
             await performStreamRequest(session, turnIdx, iv, newOv);
         }
 
         // ============================================================
-        // 执行流式请求
+        // 执行流式请求（关键修改：深度思考控制）
         // ============================================================
         async function performStreamRequest(session, turnIdx, inputVersion, outputVersion) {
             const key = localStorage.getItem(KEY_STORAGE);
@@ -1802,7 +1786,7 @@
                 return;
             }
 
-            // 构建历史：当前 turn 之前的所有 turn，使用每个 turn 当前选中的输入版本及其最新输出
+            // 构建历史
             const history = [];
             const memoryLimit = memoryMode === 'window' ? 20 : Infinity;
             const startIdx = Math.max(0, turnIdx - memoryLimit);
@@ -1827,8 +1811,11 @@
                 max_tokens: 4096,
                 temperature: 0.7,
             };
+            // 显式控制 reasoning_effort
             if (deepThinking) {
                 requestBody.reasoning_effort = 'high';
+            } else {
+                requestBody.reasoning_effort = 'low';  // 低消耗，且不返回详细推理
             }
 
             try {
@@ -1884,7 +1871,8 @@
                                         renderChat();
                                         chatBox.scrollTop = chatBox.scrollHeight;
                                     }
-                                    if (delta.reasoning_content) {
+                                    // 【关键】只有开启深度思考时才记录推理内容
+                                    if (delta.reasoning_content && deepThinking) {
                                         reasoningContent += delta.reasoning_content;
                                         outputVersion.reasoning = reasoningContent;
                                         renderChat();
@@ -1927,7 +1915,7 @@
         }
 
         // ============================================================
-        // 发送新消息（创建新回合，包含第一个输入版本）
+        // 发送新消息（创建新回合）
         // ============================================================
         async function sendMessage() {
             if (isStreaming) {
@@ -1959,7 +1947,6 @@
 
             const userContent = text || '(文件上传)';
 
-            // 创建新回合，包含一个输入版本
             const newTurn = {
                 inputVersions: [{
                     id: generateId(),
@@ -1979,7 +1966,6 @@
             pendingAttachments = [];
             renderAttachmentBar();
 
-            // 自动触发重新生成（第一个输出）
             await regenerateMessage(turnIdx);
         }
 
@@ -2060,7 +2046,7 @@
         });
 
         // ============================================================
-        // 文件夹 & 会话管理（沿用之前的，略作调整）
+        // 会话管理（沿用）
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
@@ -2162,7 +2148,7 @@
         }
 
         // ============================================================
-        // 渲染抽屉（同之前，略调整）
+        // 渲染抽屉
         // ============================================================
         function renderDrawer() {
             sessionListContainer.innerHTML = '';
@@ -2413,7 +2399,7 @@
         });
 
         // ============================================================
-        // 设置面板交互（同之前，略）
+        // 设置面板交互
         // ============================================================
         settingsBtn.addEventListener('click', () => { settingsOverlay.classList.add('active'); });
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });

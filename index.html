@@ -93,6 +93,21 @@
             border-radius: 30px;
             border: 1px solid var(--border-light);
         }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #searchBtnTop {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0 4px;
+            transition: color var(--transition);
+        }
+        #searchBtnTop:active { color: var(--text-primary); }
         #newChatBtn {
             background: var(--accent-blue);
             color: white;
@@ -106,41 +121,6 @@
             white-space: nowrap;
         }
         #newChatBtn:active { background: var(--accent-blue-hover); }
-
-        /* ========== API Key 条 ========== */
-        #keyBar {
-            display: flex;
-            gap: 8px;
-            padding: 6px 16px;
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-light);
-            flex-shrink: 0;
-            align-items: center;
-        }
-        #apiKey {
-            flex: 1;
-            padding: 6px 14px;
-            border: 1px solid var(--border-light);
-            border-radius: 30px;
-            font-size: 13px;
-            background: var(--bg-input);
-            color: var(--text-primary);
-            outline: none;
-            transition: border var(--transition);
-        }
-        #apiKey:focus { border-color: var(--accent-blue); }
-        #saveKeyBtn {
-            padding: 6px 18px;
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background var(--transition);
-        }
-        #saveKeyBtn:active { background: var(--accent-blue-hover); }
 
         /* ========== 附件条 ========== */
         #attachmentBar {
@@ -293,7 +273,7 @@
             overflow-y: auto;
         }
 
-        /* ========== 输入区域（含深度思考开关） ========== */
+        /* ========== 输入区域 ========== */
         #inputArea {
             background: var(--bg-surface);
             border-top: 1px solid var(--border-light);
@@ -303,6 +283,71 @@
             flex-direction: column;
             gap: 6px;
         }
+        /* 深度思考行：左侧开关 + 右侧模型&tokens */
+        #deepThinkingRow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+        }
+        #deepThinkingLeft {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #deepThinkingLeft label {
+            font-size: 13px;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+        .switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+            background: var(--border-light);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background var(--transition);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .switch.active {
+            background: var(--accent-blue);
+        }
+        .switch .slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform var(--transition);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .switch.active .slider {
+            transform: translateX(20px);
+        }
+        .switch.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        #deepThinkingRight {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        #deepThinkingRight .model-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        #deepThinkingRight .tokens-label {
+            color: var(--text-muted);
+        }
+
         #inputRow {
             display: flex;
             gap: 8px;
@@ -370,53 +415,6 @@
         }
         #stopBtn:active { opacity: 0.7; }
         #fileInput { display: none; }
-
-        /* 深度思考开关（输入框上方） */
-        #deepThinkingRow {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 0 4px;
-        }
-        #deepThinkingRow label {
-            font-size: 13px;
-            color: var(--text-muted);
-            cursor: pointer;
-            user-select: none;
-        }
-        .switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            flex-shrink: 0;
-            background: var(--border-light);
-            border-radius: 30px;
-            cursor: pointer;
-            transition: background var(--transition);
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .switch.active {
-            background: var(--accent-blue);
-        }
-        .switch .slider {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            transition: transform var(--transition);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-        }
-        .switch.active .slider {
-            transform: translateX(20px);
-        }
-        .switch.disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
         #charCounter {
             font-size: 12px;
             color: var(--text-muted);
@@ -425,7 +423,7 @@
             user-select: none;
         }
 
-        /* ========== 状态栏（含设置入口） ========== */
+        /* ========== 状态栏 ========== */
         #statusBar {
             display: flex;
             justify-content: space-between;
@@ -437,24 +435,7 @@
             border-top: 1px solid var(--border-light);
             flex-shrink: 0;
         }
-        #statusLeft {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        #settingsBtn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 13px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            transition: background var(--transition);
-        }
-        #settingsBtn:active { background: var(--bg-input); }
         #statusText { font-size: 12px; }
-        #tokenCounter { font-size: 12px; }
 
         /* ========== 设置浮层面板 ========== */
         #settingsOverlay {
@@ -591,7 +572,7 @@
             height: 100%;
             background: var(--bg-surface);
             z-index: 1001;
-            padding: 20px 16px;
+            padding: 20px 16px 12px;
             box-shadow: var(--shadow-heavy);
             transition: left 0.25s ease;
             display: flex;
@@ -641,6 +622,7 @@
             flex: 1;
             overflow-y: auto;
             margin-top: 4px;
+            padding-bottom: 8px;
         }
         .drawer-section-title {
             font-size: 12px;
@@ -703,6 +685,29 @@
         .folder-item .session-name { font-weight: 600; color: var(--accent-blue); }
         .folder-item.active .session-name { color: white; }
 
+        /* 抽屉底部按钮容器 */
+        #drawerFooter {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+            border-top: 1px solid var(--border-light);
+            padding-top: 10px;
+        }
+        #drawerFooter button {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        #drawerFooter button:active { background: var(--border-light); }
+
         /* ========== 搜索模态框 ========== */
         #searchModal {
             position: fixed;
@@ -757,7 +762,7 @@
             margin-top: 4px;
         }
 
-        /* ========== 导出模态框（保留） ========== */
+        /* ========== 导出模态框 ========== */
         #exportModal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.4); z-index: 4000;
@@ -804,6 +809,7 @@
             #titleArea { max-width: 30%; font-size: 14px; }
             #newChatBtn { font-size: 12px; padding: 4px 12px; }
             #settingsPanel { padding: 20px; }
+            #deepThinkingRight .model-label { font-size: 11px; }
         }
     </style>
 </head>
@@ -814,13 +820,10 @@
         <button id="menuBtn">☰</button>
         <span id="titleArea">新对话</span>
         <span id="modelIndicator">快速</span>
-        <button id="newChatBtn">+ 新对话</button>
-    </div>
-
-    <!-- API Key 快捷栏 -->
-    <div id="keyBar">
-        <input type="password" id="apiKey" placeholder="输入 API Key">
-        <button id="saveKeyBtn">保存</button>
+        <div class="topbar-right">
+            <button id="searchBtnTop">🔍</button>
+            <button id="newChatBtn">+ 新对话</button>
+        </div>
     </div>
 
     <!-- 附件条 -->
@@ -829,12 +832,18 @@
     <!-- 聊天区域 -->
     <div id="chatBox"></div>
 
-    <!-- 输入区域（含深度思考开关） -->
+    <!-- 输入区域 -->
     <div id="inputArea">
         <div id="deepThinkingRow">
-            <label for="deepSwitch">深度思考</label>
-            <div id="deepSwitch" class="switch disabled">
-                <div class="slider"></div>
+            <div id="deepThinkingLeft">
+                <label for="deepSwitch">深度思考</label>
+                <div id="deepSwitch" class="switch disabled">
+                    <div class="slider"></div>
+                </div>
+            </div>
+            <div id="deepThinkingRight">
+                <span class="model-label" id="statusModel">快速</span>
+                <span class="tokens-label" id="statusTokens">~0 tokens</span>
             </div>
         </div>
         <div id="inputRow">
@@ -847,13 +856,9 @@
         <div id="charCounter">0 字符</div>
     </div>
 
-    <!-- 状态栏（含设置入口） -->
+    <!-- 状态栏 -->
     <div id="statusBar">
-        <div id="statusLeft">
-            <button id="settingsBtn">⚙️ 设置</button>
-            <span id="statusText">就绪</span>
-        </div>
-        <span id="tokenCounter">~0 tokens</span>
+        <span id="statusText">就绪</span>
     </div>
 
     <!-- 设置浮层面板 -->
@@ -920,7 +925,7 @@
         <div id="searchResults"></div>
     </div>
 
-    <!-- 导出模态框（保留） -->
+    <!-- 导出模态框 -->
     <div id="exportModal">
         <div id="exportBox">
             <h3>导出当前对话</h3>
@@ -945,6 +950,9 @@
             <button id="newFolderBtn">📁 新建文件夹</button>
         </div>
         <div id="sessionListContainer"></div>
+        <div id="drawerFooter">
+            <button id="settingsBtn">⚙️ 设置</button>
+        </div>
     </div>
 
     <script>
@@ -980,8 +988,6 @@
         const promptInput = document.getElementById('prompt');
         const sendBtn = document.getElementById('sendBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const apiKeyInput = document.getElementById('apiKey');
-        const saveKeyBtn = document.getElementById('saveKeyBtn');
         const titleArea = document.getElementById('titleArea');
         const modelIndicator = document.getElementById('modelIndicator');
         const menuBtn = document.getElementById('menuBtn');
@@ -996,8 +1002,7 @@
         const fileInput = document.getElementById('fileInput');
         const attachmentBar = document.getElementById('attachmentBar');
         const statusText = document.getElementById('statusText');
-        const tokenCounter = document.getElementById('tokenCounter');
-        const searchBtn = document.getElementById('searchBtn'); // not in topbar, but we have search modal
+        const searchBtnTop = document.getElementById('searchBtnTop');
         const searchModal = document.getElementById('searchModal');
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
@@ -1009,6 +1014,8 @@
         const exportAll = document.getElementById('exportAll');
         const charCounter = document.getElementById('charCounter');
         const deepSwitch = document.getElementById('deepSwitch');
+        const statusModel = document.getElementById('statusModel');
+        const statusTokens = document.getElementById('statusTokens');
 
         // 设置面板
         const settingsBtn = document.getElementById('settingsBtn');
@@ -1040,14 +1047,14 @@
 
         function updateTokenCounter() {
             const session = getCurrentSession();
-            if (!session) { tokenCounter.textContent = '~0 tokens'; return; }
+            if (!session) { statusTokens.textContent = '~0 tokens'; return; }
             let total = 0;
             session.messages.forEach(m => {
                 total += estimateTokens(m.content || '');
                 if (m.images) total += 50;
                 if (m.reasoning) total += estimateTokens(m.reasoning);
             });
-            tokenCounter.textContent = `~${total} tokens`;
+            statusTokens.textContent = `~${total} tokens`;
         }
 
         // ============================================================
@@ -1055,7 +1062,7 @@
         // ============================================================
         function loadData() {
             const savedKey = localStorage.getItem(KEY_STORAGE);
-            if (savedKey) { currentKey = savedKey; apiKeyInput.value = savedKey; settingsApiKey.value = savedKey; }
+            if (savedKey) { currentKey = savedKey; settingsApiKey.value = savedKey; }
 
             const theme = localStorage.getItem(THEME_KEY);
             if (theme === 'dark') { document.body.classList.add('dark'); settingsDarkToggle.textContent = '开启'; }
@@ -1108,10 +1115,12 @@
         function updateModeUI() {
             if (mode === 'flash') {
                 modelIndicator.textContent = '快速';
+                statusModel.textContent = '快速';
                 deepSwitch.classList.add('disabled');
                 deepSwitch.classList.remove('active');
             } else {
                 modelIndicator.textContent = '专家';
+                statusModel.textContent = '专家';
                 deepSwitch.classList.remove('disabled');
                 if (deepThinking) deepSwitch.classList.add('active');
                 else deepSwitch.classList.remove('active');
@@ -1921,13 +1930,12 @@
             setTimeout(() => { if (statusText.textContent.includes('切换')) statusText.textContent = '就绪'; }, 1500);
         });
 
-        // API Key 同步
-        settingsApiKey.addEventListener('input', () => { apiKeyInput.value = settingsApiKey.value; });
-        apiKeyInput.addEventListener('input', () => { settingsApiKey.value = apiKeyInput.value; });
-        saveKeyBtn.addEventListener('click', () => {
-            const key = apiKeyInput.value.trim();
-            if (key) { localStorage.setItem(KEY_STORAGE, key); currentKey = key; settingsApiKey.value = key; alert('✅ Key 已保存'); } else { alert('请输入 Key'); }
+        // API Key
+        settingsApiKey.addEventListener('change', () => {
+            const key = settingsApiKey.value.trim();
+            if (key) { localStorage.setItem(KEY_STORAGE, key); currentKey = key; }
         });
+        // 保留顶部没有API Key栏，但设置中保存
 
         // 字号
         settingsFontSize.addEventListener('change', () => {
@@ -1998,7 +2006,7 @@
                     if (!data.sessions || !Array.isArray(data.sessions)) throw new Error('无效备份文件');
                     sessions = data.sessions;
                     folders = data.folders || [];
-                    if (data.apiKey) { localStorage.setItem(KEY_STORAGE, data.apiKey); apiKeyInput.value = data.apiKey; settingsApiKey.value = data.apiKey; }
+                    if (data.apiKey) { localStorage.setItem(KEY_STORAGE, data.apiKey); settingsApiKey.value = data.apiKey; }
                     if (data.theme) {
                         localStorage.setItem(THEME_KEY, data.theme);
                         if (data.theme === 'dark') { document.body.classList.add('dark'); settingsDarkToggle.textContent = '开启'; }
@@ -2131,15 +2139,7 @@
         }
         let searchTimeout;
         searchInput.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => performSearch(searchInput.value), 300); });
-        // 搜索按钮在顶栏没有，但可通过其他方式触发，我们用隐藏的搜索按钮（或者通过菜单？），我们给它加一个触发方式：通过设置? 其实我们可以加在顶栏，但为了简洁，我们复用之前的搜索按钮，现在把它加在顶栏的搜索图标，我们用文字"搜索"按钮
-        // 我们在顶部加一个搜索按钮？但顶部已精简，我们可以在状态栏加一个搜索入口？或者我们可以通过双击标题？算了，我们在状态栏右侧加一个搜索图标
-        // 为了保持统一，我们加一个搜索按钮在状态栏右侧
-        const searchBtnStatus = document.createElement('button');
-        searchBtnStatus.textContent = '🔍';
-        searchBtnStatus.style.cssText = 'background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:0 4px;';
-        searchBtnStatus.addEventListener('click', () => { searchModal.classList.add('active'); searchInput.value = ''; searchResults.innerHTML = ''; searchInput.focus(); });
-        document.querySelector('#statusLeft').appendChild(searchBtnStatus);
-
+        searchBtnTop.addEventListener('click', () => { searchModal.classList.add('active'); searchInput.value = ''; searchResults.innerHTML = ''; searchInput.focus(); });
         closeSearchBtn.addEventListener('click', closeSearch);
         function closeSearch() { searchModal.classList.remove('active'); }
 
@@ -2169,13 +2169,12 @@
             closeExport();
         }
 
-        // 导出按钮在顶部没有了，但可以在设置中放一个导出当前对话的按钮？或者我们保留模态框并通过某个入口触发
-        // 为了方便，我们在抽屉底部添加一个"导出当前对话"按钮
+        // 在抽屉底部添加"导出当前对话"按钮（之前已加，现在重新添加）
         const exportCurrentBtn = document.createElement('button');
         exportCurrentBtn.textContent = '📤 导出当前对话';
-        exportCurrentBtn.style.cssText = 'width:100%;padding:8px;margin-top:4px;background:var(--bg-input);border:1px solid var(--border-light);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:pointer;';
+        exportCurrentBtn.style.cssText = 'width:100%;padding:8px;background:var(--bg-input);border:1px solid var(--border-light);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:pointer;margin-top:4px;';
         exportCurrentBtn.addEventListener('click', () => { exportModal.classList.add('active'); });
-        document.querySelector('#drawer').appendChild(exportCurrentBtn);
+        document.querySelector('#drawerFooter').appendChild(exportCurrentBtn);
 
         exportModal.addEventListener('click', (e) => { if (e.target === exportModal) closeExport(); });
         closeExportBtn.addEventListener('click', closeExport);

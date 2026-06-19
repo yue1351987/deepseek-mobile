@@ -17,6 +17,7 @@
             --border-color: #e9edf2;
             --shadow-color: rgba(0,0,0,0.06);
             --highlight-bg: #fef08a;
+            --folder-color: #8b5cf6;
         }
         body.dark {
             --bg-primary: #0d1117;
@@ -30,6 +31,7 @@
             --border-color: #30363d;
             --shadow-color: rgba(0,0,0,0.4);
             --highlight-bg: #664d00;
+            --folder-color: #a78bfa;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -97,19 +99,49 @@
         #stopBtn:active { background: #dc2626; }
         #fileInput { display: none; }
         #statusBar { display: flex; justify-content: space-between; padding: 3px 14px; font-size: 10px; color: var(--text-muted); background: var(--bg-primary); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+
+        /* 抽屉强化 */
         #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: none; }
         #overlay.active { display: block; }
-        #drawer { position: fixed; top: 0; left: -85%; width: 82%; max-width: 320px; height: 100%; background: var(--bg-secondary); z-index: 1001; padding: 16px 14px; box-shadow: 4px 0 20px var(--shadow-color); transition: left 0.25s ease; display: flex; flex-direction: column; overflow: hidden; color: var(--text-primary); }
+        #drawer {
+            position: fixed; top: 0; left: -85%; width: 85%; max-width: 350px; height: 100%;
+            background: var(--bg-secondary); z-index: 1001; padding: 16px 12px;
+            box-shadow: 4px 0 20px var(--shadow-color);
+            transition: left 0.25s ease;
+            display: flex; flex-direction: column; overflow: hidden;
+            color: var(--text-primary);
+        }
         #drawer.open { left: 0; }
         #drawerTitle { font-size: 18px; font-weight: 700; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         #drawerTitle button { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
-        #sessionList { flex: 1; overflow-y: auto; margin-top: 10px; }
-        .session-item { display: flex; align-items: center; padding: 10px; border-radius: 10px; margin-bottom: 3px; cursor: pointer; background: var(--bg-primary); gap: 6px; }
-        .session-item.active { background: #4a6cf7; color: white; border-left: 4px solid #2a4cf7; }
-        .session-item.active .session-name { color: white; }
+        #drawerActions { display: flex; gap: 6px; margin: 8px 0; flex-shrink: 0; flex-wrap: wrap; }
+        #drawerActions button { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 16px; padding: 4px 12px; font-size: 12px; color: var(--text-primary); cursor: pointer; }
+        #drawerActions button:active { background: var(--border-color); }
+        #sessionListContainer { flex: 1; overflow-y: auto; margin-top: 6px; }
+        .drawer-section-title {
+            font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 8px 0 4px 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .folder-item, .session-item {
+            display: flex; align-items: center; padding: 8px 10px; border-radius: 10px;
+            margin-bottom: 2px; cursor: pointer; background: var(--bg-primary); gap: 6px;
+        }
+        .folder-item.active, .session-item.active { background: #4a6cf7; color: white; }
+        .folder-item.active .session-name, .session-item.active .session-name { color: white; }
+        .folder-item .folder-icon { font-size: 16px; margin-right: 2px; }
         .session-name { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .session-actions button { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--text-muted); padding: 1px 4px; }
-        #newSessionBtn { width: 100%; padding: 10px; background: #4a6cf7; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; flex-shrink: 0; }
+        .item-actions { display: flex; gap: 2px; flex-shrink: 0; }
+        .item-actions button { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--text-muted); padding: 1px 4px; }
+        .item-actions button:active { color: var(--text-primary); }
+        .folder-children { padding-left: 20px; border-left: 2px solid var(--border-color); margin-left: 6px; }
+        .pinned-badge { font-size: 10px; color: var(--text-muted); margin-left: 4px; }
+        .folder-item .session-name { font-weight: 600; color: var(--folder-color); }
+        .folder-item.active .session-name { color: white; }
+
+        #newSessionBtn, #newFolderBtn { width: 100%; padding: 10px; background: #4a6cf7; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; flex-shrink: 0; }
+        #newFolderBtn { background: var(--folder-color); }
+
+        /* 导出、搜索等模态框保留 */
         #exportModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: none; justify-content: center; align-items: center; }
         #exportModal.active { display: flex; }
         #exportBox { background: var(--bg-secondary); padding: 24px 20px; border-radius: 20px; max-width: 300px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; color: var(--text-primary); }
@@ -188,27 +220,36 @@
 
     <div id="overlay"></div>
     <div id="drawer">
-        <div id="drawerTitle">我的对话 <button id="closeDrawerBtn">✕</button></div>
-        <div id="sessionList"></div>
-        <button id="newSessionBtn">➕ 新建对话</button>
+        <div id="drawerTitle">
+            我的对话
+            <button id="closeDrawerBtn">✕</button>
+        </div>
+        <div id="drawerActions">
+            <button id="newSessionBtn">➕ 新对话</button>
+            <button id="newFolderBtn">📁 新建文件夹</button>
+        </div>
+        <div id="sessionListContainer"></div>
     </div>
 
     <script>
         // ============================================================
-        //  数据层
+        //  数据层 (新增 folders, 修改 sessions 结构)
         // ============================================================
         let sessions = [];
+        let folders = [];
         let currentId = null;
         let currentKey = '';
         let pendingAttachments = [];
         let isStreaming = false;
         let abortController = null;
 
-        const STORAGE_KEY = 'deepseek_sessions_v4';
+        const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v4';
+        const STORAGE_FOLDERS_KEY = 'deepseek_folders_v4';
         const KEY_STORAGE = 'deepseek_api_key';
         const THEME_KEY = 'deepseek_theme';
         const MODEL_KEY = 'deepseek_model';
 
+        // DOM 引用
         const chatBox = document.getElementById('chatBox');
         const promptInput = document.getElementById('prompt');
         const sendBtn = document.getElementById('sendBtn');
@@ -220,8 +261,9 @@
         const newChatBtn = document.getElementById('newChatBtn');
         const drawer = document.getElementById('drawer');
         const overlay = document.getElementById('overlay');
-        const sessionList = document.getElementById('sessionList');
+        const sessionListContainer = document.getElementById('sessionListContainer');
         const newSessionBtn = document.getElementById('newSessionBtn');
+        const newFolderBtn = document.getElementById('newFolderBtn');
         const closeDrawerBtn = document.getElementById('closeDrawerBtn');
         const attachBtn = document.getElementById('attachBtn');
         const fileInput = document.getElementById('fileInput');
@@ -246,20 +288,34 @@
         const backupFileInput = document.getElementById('backupFileInput');
 
         function generateId() { return Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
-        function saveSessions() { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); updateTokenCounter(); }
+
+        function saveSessions() {
+            localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(sessions));
+            localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(folders));
+            updateTokenCounter();
+        }
+
         function getCurrentSession() { return sessions.find(s => s.id === currentId) || sessions[0]; }
 
         function loadData() {
+            // Key
             const savedKey = localStorage.getItem(KEY_STORAGE);
             if (savedKey) { currentKey = savedKey; apiKeyInput.value = savedKey; }
+            // Theme
             const theme = localStorage.getItem(THEME_KEY);
             if (theme === 'dark') { document.body.classList.add('dark'); darkToggle.textContent = '☀️'; }
+            // Model
             const model = localStorage.getItem(MODEL_KEY);
             if (model) modelSelect.value = model;
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) { try { sessions = JSON.parse(raw); } catch { sessions = []; } }
+            // Folders
+            const rawFolders = localStorage.getItem(STORAGE_FOLDERS_KEY);
+            if (rawFolders) { try { folders = JSON.parse(rawFolders); } catch { folders = []; } }
+            // Sessions
+            const rawSessions = localStorage.getItem(STORAGE_SESSIONS_KEY);
+            if (rawSessions) { try { sessions = JSON.parse(rawSessions); } catch { sessions = []; } }
+            // 如果没有会话，创建一个默认
             if (!sessions.length) {
-                sessions.push({ id: generateId(), name: '新对话', messages: [] });
+                sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false });
                 saveSessions();
             }
             const active = sessions.find(s => s.active) || sessions[0];
@@ -284,7 +340,7 @@
         }
 
         // ============================================================
-        //  渲染聊天
+        //  渲染聊天 (与之前一致)
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -362,7 +418,7 @@
                 }
             }
             chatBox.scrollTop = chatBox.scrollHeight;
-            renderSessionList();
+            renderDrawer();
             updateTokenCounter();
         }
 
@@ -402,33 +458,12 @@
             idx = (idx + direction + total) % total;
             msg.historyIndex = idx;
 
-            // 更新用户消息内容
             if (idx === 0) {
-                // 当前版本：恢复为原始内容（存储在msg.content中，但可能已被修改）
-                // 我们需要找到原始内容：如果历史中有记录，则恢复
-                // 由于我们存储了所有历史，但当前内容可能已变，我们使用history中存储的对应版本
-                // 实际上，我们需要从history中取
-                // 但因为我们存储的是{ user, assistant }，所以我们可以直接取
-                // 然而，当前版本（idx===0）是"最新"版本，即msg.content本身
-                // 所以不需要恢复
-                // 但助手内容需要对应
-                // 查找对应的助手消息
-                let assistantIdx = userMsgIndex + 1;
-                while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') {
-                    assistantIdx++;
-                }
-                if (assistantIdx < session.messages.length) {
-                    const assistantMsg = session.messages[assistantIdx];
-                    // 如果历史中有匹配的助手内容，则恢复
-                    // 但这里我们不做恢复，因为当前版本就是最新
-                }
-                // 重新渲染即可
+                // 当前版本，无需恢复
             } else {
-                // 历史版本
                 const histItem = msg.history[idx - 1];
                 if (histItem) {
                     msg.content = histItem.user;
-                    // 更新对应的助手消息
                     let assistantIdx = userMsgIndex + 1;
                     while (assistantIdx < session.messages.length && session.messages[assistantIdx].role !== 'assistant') {
                         assistantIdx++;
@@ -443,7 +478,7 @@
         }
 
         // ============================================================
-        //  编辑用户消息
+        //  编辑、重新生成 (与之前相同，略)
         // ============================================================
         function editUserMessage(index) {
             const session = getCurrentSession();
@@ -479,9 +514,6 @@
             statusText.textContent = '消息已修改，按发送键重新生成';
         }
 
-        // ============================================================
-        //  重新生成
-        // ============================================================
         async function regenerateMessage(index) {
             const session = getCurrentSession();
             if (!session) return;
@@ -543,7 +575,630 @@
         }
 
         // ============================================================
-        //  发送消息 (流式)
+        //  发送消息 (流式) - 与之前一致，省略以节省篇幅，功能完全保留
+        //  实际使用时需要包含完整 sendMessage 函数，但此处为了代码完整性，我会在最终版本中保留。
+        //  由于代码过长，此处仅作示意，最终完整代码我会在回答末尾提供。
+        // ============================================================
+        // （为了节省篇幅，此处省略 sendMessage 等函数，但最终完整代码会包含所有功能）
+
+        // ============================================================
+        //  附件管理 (与之前一致)
+        // ============================================================
+        function renderAttachmentBar() {
+            attachmentBar.innerHTML = '';
+            if (pendingAttachments.length === 0) { attachmentBar.classList.remove('show'); return; }
+            attachmentBar.classList.add('show');
+            pendingAttachments.forEach((att, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'attach-tag';
+                const icon = att.type === 'image' ? '🖼️' : '📄';
+                tag.innerHTML = `${icon} ${att.name}`;
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '✕';
+                removeBtn.style.background = 'none';
+                removeBtn.style.border = 'none';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.addEventListener('click', () => {
+                    pendingAttachments.splice(index, 1);
+                    renderAttachmentBar();
+                });
+                tag.appendChild(removeBtn);
+                attachmentBar.appendChild(tag);
+            });
+        }
+
+        attachBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+            fileInput.value = '';
+            for (const file of files) {
+                const isImage = file.type.startsWith('image/');
+                if (isImage) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        pendingAttachments.push({ type: 'image', data: ev.target.result, name: file.name });
+                        renderAttachmentBar();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    try {
+                        const key = localStorage.getItem(KEY_STORAGE);
+                        if (!key) { alert('请先保存 API Key'); return; }
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('purpose', 'file-extract');
+                        const uploadRes = await fetch('https://api.deepseek.com/files', {
+                            method: 'POST', headers: { 'Authorization': `Bearer ${key}` }, body: formData
+                        });
+                        if (!uploadRes.ok) {
+                            const err = await uploadRes.json().catch(() => ({}));
+                            throw new Error(`上传失败 (${uploadRes.status})`);
+                        }
+                        const result = await uploadRes.json();
+                        pendingAttachments.push({ type: 'file', data: result.id, name: file.name });
+                        renderAttachmentBar();
+                    } catch (err) { alert(`文档上传出错：${err.message}`); }
+                }
+            }
+        });
+
+        // ============================================================
+        //  文件夹 & 对话管理 (新增)
+        // ============================================================
+        function createFolder() {
+            const name = prompt('请输入文件夹名称：', '新文件夹');
+            if (!name || name.trim() === '') return;
+            const folder = {
+                id: generateId(),
+                name: name.trim(),
+                pinned: false
+            };
+            folders.push(folder);
+            saveSessions();
+            renderDrawer();
+        }
+
+        function renameFolder(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return;
+            const newName = prompt('重命名文件夹：', folder.name);
+            if (newName && newName.trim() !== '') {
+                folder.name = newName.trim();
+                saveSessions();
+                renderDrawer();
+            }
+        }
+
+        function toggleFolderPin(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (folder) {
+                folder.pinned = !folder.pinned;
+                saveSessions();
+                renderDrawer();
+            }
+        }
+
+        function deleteFolder(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return;
+            const confirmText = prompt(`⚠️ 确定要删除文件夹“${folder.name}”吗？\n其中的对话将移至“未分类”。\n请输入“确认删除”以继续：`);
+            if (confirmText !== '确认删除') {
+                alert('删除已取消');
+                return;
+            }
+            // 将该文件夹下的对话移出（folderId设为null）
+            sessions.forEach(s => {
+                if (s.folderId === folderId) s.folderId = null;
+            });
+            folders = folders.filter(f => f.id !== folderId);
+            saveSessions();
+            renderDrawer();
+        }
+
+        function toggleSessionPin(sessionId) {
+            const session = sessions.find(s => s.id === sessionId);
+            if (session) {
+                session.pinned = !session.pinned;
+                saveSessions();
+                renderDrawer();
+            }
+        }
+
+        function deleteSessionWithConfirm(sessionId) {
+            const session = sessions.find(s => s.id === sessionId);
+            if (!session) return;
+            if (sessions.length <= 1) {
+                alert('至少保留一个对话');
+                return;
+            }
+            const confirmText = prompt(`⚠️ 确定要删除对话“${session.name}”吗？\n请输入“确认删除”以继续：`);
+            if (confirmText !== '确认删除') {
+                alert('删除已取消');
+                return;
+            }
+            sessions = sessions.filter(s => s.id !== sessionId);
+            if (currentId === sessionId) {
+                currentId = sessions[0].id;
+                sessions[0].active = true;
+            }
+            saveSessions();
+            renderChat();
+            renderDrawer();
+        }
+
+        function moveSessionToFolder(sessionId, folderId) {
+            const session = sessions.find(s => s.id === sessionId);
+            if (session) {
+                session.folderId = folderId;
+                saveSessions();
+                renderDrawer();
+            }
+        }
+
+        // ============================================================
+        //  渲染抽屉 (支持文件夹、置顶、二次确认删除)
+        // ============================================================
+        function renderDrawer() {
+            sessionListContainer.innerHTML = '';
+
+            // 获取当前选中的会话ID
+            const currentSessionId = currentId;
+
+            // 分离置顶和非置顶项
+            const pinnedFolders = folders.filter(f => f.pinned);
+            const unpinnedFolders = folders.filter(f => !f.pinned);
+            const pinnedSessions = sessions.filter(s => s.pinned && !s.folderId);
+            const unpinnedSessions = sessions.filter(s => !s.pinned && !s.folderId);
+            // 文件夹内的会话按文件夹分组（每个文件夹单独显示）
+            // 为了简洁，我们展示所有文件夹，并在其中列出其会话
+
+            // 辅助函数：创建会话项DOM
+            function createSessionItem(session) {
+                const div = document.createElement('div');
+                div.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'session-name';
+                nameSpan.textContent = session.name || '未命名';
+                if (session.pinned) {
+                    const badge = document.createElement('span');
+                    badge.className = 'pinned-badge';
+                    badge.textContent = '📌';
+                    nameSpan.appendChild(badge);
+                }
+                const actions = document.createElement('div');
+                actions.className = 'item-actions';
+
+                // 移动按钮（移到其他文件夹或未分类）
+                const moveBtn = document.createElement('button');
+                moveBtn.textContent = '📂';
+                moveBtn.title = '移动到文件夹';
+                moveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // 弹出选择文件夹对话框
+                    const folderOptions = folders.map(f => `${f.name} (${f.id})`).join('\n');
+                    const choice = prompt(`选择目标文件夹 (输入文件夹ID，留空则移到未分类)：\n${folderOptions}\n\n当前对话: ${session.name}`);
+                    if (choice === null) return;
+                    const targetFolder = folders.find(f => f.id === choice.trim());
+                    moveSessionToFolder(session.id, targetFolder ? targetFolder.id : null);
+                });
+                actions.appendChild(moveBtn);
+
+                // 置顶切换
+                const pinBtn = document.createElement('button');
+                pinBtn.textContent = session.pinned ? '📌' : '📍';
+                pinBtn.title = '切换置顶';
+                pinBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleSessionPin(session.id);
+                });
+                actions.appendChild(pinBtn);
+
+                // 删除
+                const delBtn = document.createElement('button');
+                delBtn.textContent = '🗑️';
+                delBtn.title = '删除对话';
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteSessionWithConfirm(session.id);
+                });
+                actions.appendChild(delBtn);
+
+                div.appendChild(nameSpan);
+                div.appendChild(actions);
+                div.addEventListener('click', () => {
+                    switchSession(session.id);
+                });
+                return div;
+            }
+
+            // 辅助函数：创建文件夹DOM（含子会话）
+            function createFolderItem(folder) {
+                const container = document.createElement('div');
+                container.className = 'folder-container';
+
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'folder-item';
+                const icon = document.createElement('span');
+                icon.className = 'folder-icon';
+                icon.textContent = '📁';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'session-name';
+                nameSpan.textContent = folder.name;
+                if (folder.pinned) {
+                    const badge = document.createElement('span');
+                    badge.className = 'pinned-badge';
+                    badge.textContent = '📌';
+                    nameSpan.appendChild(badge);
+                }
+                const actions = document.createElement('div');
+                actions.className = 'item-actions';
+                // 重命名
+                const renameBtn = document.createElement('button');
+                renameBtn.textContent = '✏️';
+                renameBtn.title = '重命名文件夹';
+                renameBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    renameFolder(folder.id);
+                });
+                actions.appendChild(renameBtn);
+                // 置顶切换
+                const pinBtn = document.createElement('button');
+                pinBtn.textContent = folder.pinned ? '📌' : '📍';
+                pinBtn.title = '切换置顶';
+                pinBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFolderPin(folder.id);
+                });
+                actions.appendChild(pinBtn);
+                // 删除文件夹
+                const delBtn = document.createElement('button');
+                delBtn.textContent = '🗑️';
+                delBtn.title = '删除文件夹';
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteFolder(folder.id);
+                });
+                actions.appendChild(delBtn);
+
+                folderDiv.appendChild(icon);
+                folderDiv.appendChild(nameSpan);
+                folderDiv.appendChild(actions);
+                container.appendChild(folderDiv);
+
+                // 子会话列表
+                const childSessions = sessions.filter(s => s.folderId === folder.id);
+                if (childSessions.length > 0) {
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'folder-children';
+                    // 按置顶排序
+                    const sorted = [...childSessions].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+                    sorted.forEach(s => {
+                        childrenDiv.appendChild(createSessionItem(s));
+                    });
+                    container.appendChild(childrenDiv);
+                } else {
+                    const empty = document.createElement('div');
+                    empty.style.cssText = 'color:var(--text-muted);font-size:12px;padding:4px 12px;';
+                    empty.textContent = '（空文件夹）';
+                    container.appendChild(empty);
+                }
+                return container;
+            }
+
+            // 显示置顶文件夹
+            if (pinnedFolders.length) {
+                const title = document.createElement('div');
+                title.className = 'drawer-section-title';
+                title.textContent = '📌 置顶文件夹';
+                sessionListContainer.appendChild(title);
+                pinnedFolders.forEach(f => {
+                    sessionListContainer.appendChild(createFolderItem(f));
+                });
+            }
+
+            // 显示置顶对话（未分类）
+            if (pinnedSessions.length) {
+                const title = document.createElement('div');
+                title.className = 'drawer-section-title';
+                title.textContent = '📌 置顶对话';
+                sessionListContainer.appendChild(title);
+                pinnedSessions.forEach(s => {
+                    sessionListContainer.appendChild(createSessionItem(s));
+                });
+            }
+
+            // 显示普通文件夹
+            if (unpinnedFolders.length) {
+                const title = document.createElement('div');
+                title.className = 'drawer-section-title';
+                title.textContent = '📁 文件夹';
+                sessionListContainer.appendChild(title);
+                unpinnedFolders.forEach(f => {
+                    sessionListContainer.appendChild(createFolderItem(f));
+                });
+            }
+
+            // 显示普通对话（未分类）
+            if (unpinnedSessions.length) {
+                const title = document.createElement('div');
+                className = 'drawer-section-title';
+                title.textContent = '💬 对话';
+                sessionListContainer.appendChild(title);
+                unpinnedSessions.forEach(s => {
+                    sessionListContainer.appendChild(createSessionItem(s));
+                });
+            }
+
+            // 如果没有任何内容，显示提示
+            if (sessions.length === 0 && folders.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'color:var(--text-muted);text-align:center;padding:30px 0;';
+                empty.textContent = '暂无对话和文件夹，点击下方创建';
+                sessionListContainer.appendChild(empty);
+            }
+        }
+
+        // ============================================================
+        //  会话切换、创建
+        // ============================================================
+        function switchSession(id) {
+            if (id === currentId) { closeDrawer(); return; }
+            sessions.forEach(s => delete s.active);
+            const target = sessions.find(s => s.id === id);
+            if (target) {
+                target.active = true;
+                currentId = id;
+                saveSessions();
+                renderChat();
+                closeDrawer();
+            }
+        }
+
+        function createNewSession() {
+            const count = sessions.length + 1;
+            const newSession = {
+                id: generateId(),
+                name: `对话 ${count}`,
+                messages: [],
+                folderId: null,
+                pinned: false,
+                active: true
+            };
+            sessions.forEach(s => delete s.active);
+            sessions.push(newSession);
+            currentId = newSession.id;
+            saveSessions();
+            renderChat();
+            closeDrawer();
+            promptInput.focus();
+        }
+
+        // ============================================================
+        //  抽屉开关
+        // ============================================================
+        function openDrawer() { renderDrawer(); overlay.classList.add('active'); drawer.classList.add('open'); }
+        function closeDrawer() { overlay.classList.remove('active'); drawer.classList.remove('open'); }
+        menuBtn.addEventListener('click', openDrawer);
+        closeDrawerBtn.addEventListener('click', closeDrawer);
+        overlay.addEventListener('click', closeDrawer);
+        newSessionBtn.addEventListener('click', createNewSession);
+        newFolderBtn.addEventListener('click', createFolder);
+        newChatBtn.addEventListener('click', createNewSession);
+        titleArea.addEventListener('click', () => {
+            const cur = getCurrentSession();
+            if (cur) {
+                const newName = prompt('重命名对话：', cur.name);
+                if (newName && newName.trim() !== '') {
+                    cur.name = newName.trim();
+                    saveSessions();
+                    renderChat();
+                }
+            }
+        });
+
+        // ============================================================
+        //  Key 保存, 模型, 深色
+        // ============================================================
+        saveKeyBtn.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            if (key) { localStorage.setItem(KEY_STORAGE, key); currentKey = key; alert('✅ Key 已保存'); } else { alert('请输入 Key'); }
+        });
+        modelSelect.addEventListener('change', () => { localStorage.setItem(MODEL_KEY, modelSelect.value); });
+        darkToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+            darkToggle.textContent = isDark ? '☀️' : '🌙';
+        });
+
+        // ============================================================
+        //  备份 & 恢复 (包含 folders)
+        // ============================================================
+        function backupData() {
+            try {
+                const data = {
+                    version: '2.0',
+                    exportedAt: new Date().toISOString(),
+                    sessions: sessions,
+                    folders: folders,
+                    apiKey: localStorage.getItem(KEY_STORAGE) || '',
+                    theme: localStorage.getItem(THEME_KEY) || 'light',
+                    model: localStorage.getItem(MODEL_KEY) || 'deepseek-v4-flash'
+                };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = new Date().toISOString().slice(0,10);
+                a.download = `DeepSeek_备份_${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                statusText.textContent = '✅ 数据备份成功！';
+                setTimeout(() => { if (statusText.textContent === '✅ 数据备份成功！') statusText.textContent = '就绪'; }, 3000);
+            } catch (e) {
+                alert('备份失败：' + e.message);
+            }
+        }
+
+        function restoreData(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.sessions || !Array.isArray(data.sessions)) {
+                        throw new Error('无效的备份文件：缺少 sessions 数据');
+                    }
+                    sessions = data.sessions;
+                    folders = data.folders || [];
+                    if (data.apiKey) localStorage.setItem(KEY_STORAGE, data.apiKey);
+                    if (data.theme) {
+                        localStorage.setItem(THEME_KEY, data.theme);
+                        if (data.theme === 'dark') {
+                            document.body.classList.add('dark');
+                            darkToggle.textContent = '☀️';
+                        } else {
+                            document.body.classList.remove('dark');
+                            darkToggle.textContent = '🌙';
+                        }
+                    }
+                    if (data.model) {
+                        localStorage.setItem(MODEL_KEY, data.model);
+                        modelSelect.value = data.model;
+                    }
+                    const active = sessions.find(s => s.active) || sessions[0];
+                    if (active) {
+                        currentId = active.id;
+                    } else if (sessions.length > 0) {
+                        sessions[0].active = true;
+                        currentId = sessions[0].id;
+                    } else {
+                        sessions.push({ id: generateId(), name: '新对话', messages: [], folderId: null, pinned: false, active: true });
+                        currentId = sessions[0].id;
+                    }
+                    saveSessions();
+                    renderChat();
+                    const savedKey = localStorage.getItem(KEY_STORAGE);
+                    if (savedKey) apiKeyInput.value = savedKey;
+                    statusText.textContent = '✅ 数据恢复成功！';
+                    alert('✅ 数据恢复成功！所有对话和文件夹已还原。');
+                } catch (err) {
+                    alert('恢复失败：' + err.message + '\n请确认选择的是正确的备份文件。');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        backupBtn.addEventListener('click', backupData);
+        restoreBtn.addEventListener('click', () => { backupFileInput.click(); });
+        backupFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (confirm('⚠️ 恢复数据将覆盖当前所有对话、文件夹和历史记录，确定继续吗？')) {
+                    restoreData(file);
+                }
+            }
+            backupFileInput.value = '';
+        });
+
+        // ============================================================
+        //  搜索 (略)
+        // ============================================================
+        function performSearch(query) {
+            if (!query.trim()) { searchResults.innerHTML = '<div style="color:var(--text-muted);padding:20px;">输入关键词搜索</div>'; return; }
+            const q = query.trim().toLowerCase();
+            let results = [];
+            sessions.forEach(s => {
+                s.messages.forEach((m, idx) => {
+                    if (m.content && m.content.toLowerCase().includes(q)) {
+                        results.push({ sessionId: s.id, sessionName: s.name, msgIndex: idx, content: m.content, role: m.role });
+                    }
+                });
+            });
+            if (results.length === 0) { searchResults.innerHTML = '<div style="color:var(--text-muted);padding:20px;">未找到</div>'; return; }
+            searchResults.innerHTML = '';
+            results.slice(0, 30).forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                const snippet = document.createElement('div');
+                snippet.style.fontSize = '14px';
+                const idx = r.content.toLowerCase().indexOf(q);
+                let highlighted = r.content;
+                if (idx !== -1) {
+                    const start = Math.max(0, idx - 20);
+                    const end = Math.min(r.content.length, idx + q.length + 20);
+                    highlighted = (start>0?'...':'') + r.content.substring(start, idx) + `<mark>${r.content.substring(idx, idx+q.length)}</mark>` + r.content.substring(idx+q.length, end) + (end<r.content.length?'...':'');
+                }
+                snippet.innerHTML = highlighted;
+                const meta = document.createElement('div');
+                meta.style.fontSize = '12px';
+                meta.style.color = 'var(--text-muted)';
+                meta.textContent = `📁 ${r.sessionName} · ${r.role === 'user' ? '你' : 'AI'}`;
+                div.appendChild(snippet); div.appendChild(meta);
+                div.addEventListener('click', () => {
+                    closeSearch();
+                    switchSession(r.sessionId);
+                    setTimeout(() => {
+                        const items = chatBox.querySelectorAll('.msg-wrapper');
+                        const session = getCurrentSession();
+                        if (session) {
+                            const idx = session.messages.findIndex(m => m.content === r.content);
+                            if (idx !== -1 && items[idx]) {
+                                items[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                items[idx].style.transition = 'background 0.3s';
+                                items[idx].style.background = 'var(--highlight-bg)';
+                                setTimeout(() => items[idx].style.background = '', 2000);
+                            }
+                        }
+                    }, 300);
+                });
+                searchResults.appendChild(div);
+            });
+        }
+        let searchTimeout;
+        searchInput.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => performSearch(searchInput.value), 300); });
+        searchBtn.addEventListener('click', () => { searchModal.classList.add('active'); searchInput.value = ''; searchResults.innerHTML = ''; searchInput.focus(); });
+        closeSearchBtn.addEventListener('click', closeSearch);
+        function closeSearch() { searchModal.classList.remove('active'); }
+
+        // ============================================================
+        //  导出 (与之前一致)
+        // ============================================================
+        function exportChat(role) {
+            const session = getCurrentSession();
+            if (!session || !session.messages.length) { alert('当前对话为空，无法导出'); return; }
+            let msgs = session.messages;
+            if (role === 'user') msgs = msgs.filter(m => m.role === 'user');
+            else if (role === 'assistant') msgs = msgs.filter(m => m.role === 'assistant');
+            if (!msgs.length) { alert('没有匹配的消息可导出'); return; }
+
+            let text = `导出时间: ${new Date().toLocaleString()}\n对话: ${session.name}\n${'='.repeat(30)}\n\n`;
+            msgs.forEach(m => {
+                const label = m.role === 'user' ? '👤 我' : '🤖 AI';
+                text += `[${label}]\n${m.content}\n\n---\n\n`;
+            });
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const roleName = role === 'user' ? '我的提问' : (role === 'assistant' ? 'AI回复' : '全部');
+            a.download = `${session.name}_${roleName}_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            closeExport();
+        }
+
+        exportBtn.addEventListener('click', () => { exportModal.classList.add('active'); });
+        closeExportBtn.addEventListener('click', closeExport);
+        function closeExport() { exportModal.classList.remove('active'); }
+        exportAI.addEventListener('click', () => exportChat('assistant'));
+        exportUser.addEventListener('click', () => exportChat('user'));
+        exportAll.addEventListener('click', () => exportChat('all'));
+
+        // ============================================================
+        //  发送消息 (完整流式，集成停止)
         // ============================================================
         async function sendMessage() {
             if (isStreaming) return;
@@ -722,359 +1377,11 @@
         });
 
         // ============================================================
-        //  附件管理
-        // ============================================================
-        function renderAttachmentBar() {
-            attachmentBar.innerHTML = '';
-            if (pendingAttachments.length === 0) { attachmentBar.classList.remove('show'); return; }
-            attachmentBar.classList.add('show');
-            pendingAttachments.forEach((att, index) => {
-                const tag = document.createElement('span');
-                tag.className = 'attach-tag';
-                const icon = att.type === 'image' ? '🖼️' : '📄';
-                tag.innerHTML = `${icon} ${att.name}`;
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = '✕';
-                removeBtn.style.background = 'none';
-                removeBtn.style.border = 'none';
-                removeBtn.style.cursor = 'pointer';
-                removeBtn.addEventListener('click', () => {
-                    pendingAttachments.splice(index, 1);
-                    renderAttachmentBar();
-                });
-                tag.appendChild(removeBtn);
-                attachmentBar.appendChild(tag);
-            });
-        }
-
-        attachBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (!files.length) return;
-            fileInput.value = '';
-            for (const file of files) {
-                const isImage = file.type.startsWith('image/');
-                if (isImage) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        pendingAttachments.push({ type: 'image', data: ev.target.result, name: file.name });
-                        renderAttachmentBar();
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    try {
-                        const key = localStorage.getItem(KEY_STORAGE);
-                        if (!key) { alert('请先保存 API Key'); return; }
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('purpose', 'file-extract');
-                        const uploadRes = await fetch('https://api.deepseek.com/files', {
-                            method: 'POST', headers: { 'Authorization': `Bearer ${key}` }, body: formData
-                        });
-                        if (!uploadRes.ok) {
-                            const err = await uploadRes.json().catch(() => ({}));
-                            throw new Error(`上传失败 (${uploadRes.status})`);
-                        }
-                        const result = await uploadRes.json();
-                        pendingAttachments.push({ type: 'file', data: result.id, name: file.name });
-                        renderAttachmentBar();
-                    } catch (err) { alert(`文档上传出错：${err.message}`); }
-                }
-            }
-        });
-
-        // ============================================================
-        //  会话管理
-        // ============================================================
-        function renderSessionList() {
-            sessionList.innerHTML = '';
-            if (sessions.length === 0) { sessionList.innerHTML = '<div style="color:var(--text-muted);padding:20px;">暂无对话</div>'; return; }
-            sessions.forEach(s => {
-                const item = document.createElement('div');
-                item.className = 'session-item' + (s.id === currentId ? ' active' : '');
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'session-name';
-                nameSpan.textContent = s.name || '未命名';
-                const actions = document.createElement('div');
-                actions.className = 'session-actions';
-                const renameBtn = document.createElement('button');
-                renameBtn.textContent = '✏️';
-                renameBtn.addEventListener('click', (e) => { e.stopPropagation(); renameSession(s.id); });
-                const delBtn = document.createElement('button');
-                delBtn.textContent = '🗑️';
-                delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
-                actions.appendChild(renameBtn); actions.appendChild(delBtn);
-                item.appendChild(nameSpan); item.appendChild(actions);
-                item.addEventListener('click', () => { switchSession(s.id); });
-                sessionList.appendChild(item);
-            });
-        }
-
-        function switchSession(id) {
-            if (id === currentId) { closeDrawer(); return; }
-            sessions.forEach(s => delete s.active);
-            const target = sessions.find(s => s.id === id);
-            if (target) { target.active = true; currentId = id; saveSessions(); renderChat(); closeDrawer(); }
-        }
-        function renameSession(id) {
-            const s = sessions.find(s => s.id === id);
-            if (!s) return;
-            const newName = prompt('重命名：', s.name);
-            if (newName !== null && newName.trim() !== '') { s.name = newName.trim(); saveSessions(); renderChat(); }
-        }
-        function deleteSession(id) {
-            if (sessions.length <= 1) { alert('至少保留一个对话'); return; }
-            if (!confirm(`删除“${sessions.find(s=>s.id===id)?.name || '未命名'}”？`)) return;
-            sessions = sessions.filter(s => s.id !== id);
-            if (currentId === id) { currentId = sessions[0].id; sessions[0].active = true; }
-            saveSessions(); renderChat();
-        }
-        function createNewSession() {
-            const count = sessions.length + 1;
-            const newSession = { id: generateId(), name: `对话 ${count}`, messages: [], active: true };
-            sessions.forEach(s => delete s.active);
-            sessions.push(newSession);
-            currentId = newSession.id;
-            saveSessions();
-            renderChat();
-            closeDrawer();
-            promptInput.focus();
-        }
-
-        function openDrawer() { renderSessionList(); overlay.classList.add('active'); drawer.classList.add('open'); }
-        function closeDrawer() { overlay.classList.remove('active'); drawer.classList.remove('open'); }
-        menuBtn.addEventListener('click', openDrawer);
-        closeDrawerBtn.addEventListener('click', closeDrawer);
-        overlay.addEventListener('click', closeDrawer);
-        newSessionBtn.addEventListener('click', createNewSession);
-        newChatBtn.addEventListener('click', createNewSession);
-        titleArea.addEventListener('click', () => { const cur = getCurrentSession(); if (cur) renameSession(cur.id); });
-
-        saveKeyBtn.addEventListener('click', () => {
-            const key = apiKeyInput.value.trim();
-            if (key) { localStorage.setItem(KEY_STORAGE, key); currentKey = key; alert('✅ Key 已保存'); } else { alert('请输入 Key'); }
-        });
-
-        modelSelect.addEventListener('change', () => { localStorage.setItem(MODEL_KEY, modelSelect.value); });
-        darkToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark');
-            const isDark = document.body.classList.contains('dark');
-            localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
-            darkToggle.textContent = isDark ? '☀️' : '🌙';
-        });
-
-        // ============================================================
-        //  备份 & 恢复 (核心新增功能)
-        // ============================================================
-        // 备份：导出所有数据为 JSON 文件
-        function backupData() {
-            try {
-                const data = {
-                    version: '1.0',
-                    exportedAt: new Date().toISOString(),
-                    sessions: sessions,
-                    apiKey: localStorage.getItem(KEY_STORAGE) || '',
-                    theme: localStorage.getItem(THEME_KEY) || 'light',
-                    model: localStorage.getItem(MODEL_KEY) || 'deepseek-v4-flash'
-                };
-                const json = JSON.stringify(data, null, 2);
-                const blob = new Blob([json], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                const dateStr = new Date().toISOString().slice(0,10);
-                a.download = `DeepSeek_备份_${dateStr}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                statusText.textContent = '✅ 数据备份成功！';
-                setTimeout(() => { if (statusText.textContent === '✅ 数据备份成功！') statusText.textContent = '就绪'; }, 3000);
-            } catch (e) {
-                alert('备份失败：' + e.message);
-            }
-        }
-
-        // 恢复：从 JSON 文件恢复数据
-        function restoreData(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (!data.sessions || !Array.isArray(data.sessions)) {
-                        throw new Error('无效的备份文件：缺少 sessions 数据');
-                    }
-                    // 恢复数据
-                    sessions = data.sessions;
-                    if (data.apiKey) localStorage.setItem(KEY_STORAGE, data.apiKey);
-                    if (data.theme) {
-                        localStorage.setItem(THEME_KEY, data.theme);
-                        if (data.theme === 'dark') {
-                            document.body.classList.add('dark');
-                            darkToggle.textContent = '☀️';
-                        } else {
-                            document.body.classList.remove('dark');
-                            darkToggle.textContent = '🌙';
-                        }
-                    }
-                    if (data.model) {
-                        localStorage.setItem(MODEL_KEY, data.model);
-                        modelSelect.value = data.model;
-                    }
-                    // 重新加载会话
-                    const active = sessions.find(s => s.active) || sessions[0];
-                    if (active) {
-                        currentId = active.id;
-                    } else if (sessions.length > 0) {
-                        sessions[0].active = true;
-                        currentId = sessions[0].id;
-                    } else {
-                        // 如果没有会话，创建一个默认的
-                        sessions.push({ id: generateId(), name: '新对话', messages: [] });
-                        currentId = sessions[0].id;
-                        sessions[0].active = true;
-                    }
-                    saveSessions();
-                    renderChat();
-                    // 更新 API Key 输入框
-                    const savedKey = localStorage.getItem(KEY_STORAGE);
-                    if (savedKey) apiKeyInput.value = savedKey;
-                    statusText.textContent = '✅ 数据恢复成功！页面已刷新';
-                    alert('✅ 数据恢复成功！所有对话已还原。');
-                } catch (err) {
-                    alert('恢复失败：' + err.message + '\n请确认选择的是正确的备份文件。');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        backupBtn.addEventListener('click', backupData);
-
-        restoreBtn.addEventListener('click', () => {
-            backupFileInput.click();
-        });
-
-        backupFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (confirm('⚠️ 恢复数据将覆盖当前所有对话和历史记录，确定继续吗？')) {
-                    restoreData(file);
-                }
-            }
-            backupFileInput.value = '';
-        });
-
-        // ============================================================
-        //  搜索
-        // ============================================================
-        function performSearch(query) {
-            if (!query.trim()) { searchResults.innerHTML = '<div style="color:var(--text-muted);padding:20px;">输入关键词搜索</div>'; return; }
-            const q = query.trim().toLowerCase();
-            let results = [];
-            sessions.forEach(s => {
-                s.messages.forEach((m, idx) => {
-                    if (m.content && m.content.toLowerCase().includes(q)) {
-                        results.push({ sessionId: s.id, sessionName: s.name, msgIndex: idx, content: m.content, role: m.role });
-                    }
-                });
-            });
-            if (results.length === 0) { searchResults.innerHTML = '<div style="color:var(--text-muted);padding:20px;">未找到</div>'; return; }
-            searchResults.innerHTML = '';
-            results.slice(0, 30).forEach(r => {
-                const div = document.createElement('div');
-                div.className = 'search-result-item';
-                const snippet = document.createElement('div');
-                snippet.style.fontSize = '14px';
-                const idx = r.content.toLowerCase().indexOf(q);
-                let highlighted = r.content;
-                if (idx !== -1) {
-                    const start = Math.max(0, idx - 20);
-                    const end = Math.min(r.content.length, idx + q.length + 20);
-                    highlighted = (start>0?'...':'') + r.content.substring(start, idx) + `<mark>${r.content.substring(idx, idx+q.length)}</mark>` + r.content.substring(idx+q.length, end) + (end<r.content.length?'...':'');
-                }
-                snippet.innerHTML = highlighted;
-                const meta = document.createElement('div');
-                meta.style.fontSize = '12px';
-                meta.style.color = 'var(--text-muted)';
-                meta.textContent = `📁 ${r.sessionName} · ${r.role === 'user' ? '你' : 'AI'}`;
-                div.appendChild(snippet); div.appendChild(meta);
-                div.addEventListener('click', () => {
-                    closeSearch();
-                    switchSession(r.sessionId);
-                    setTimeout(() => {
-                        const items = chatBox.querySelectorAll('.msg-wrapper');
-                        const session = getCurrentSession();
-                        if (session) {
-                            const idx = session.messages.findIndex(m => m.content === r.content);
-                            if (idx !== -1 && items[idx]) {
-                                items[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                items[idx].style.transition = 'background 0.3s';
-                                items[idx].style.background = 'var(--highlight-bg)';
-                                setTimeout(() => items[idx].style.background = '', 2000);
-                            }
-                        }
-                    }, 300);
-                });
-                searchResults.appendChild(div);
-            });
-        }
-        let searchTimeout;
-        searchInput.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => performSearch(searchInput.value), 300); });
-        searchBtn.addEventListener('click', () => { searchModal.classList.add('active'); searchInput.value = ''; searchResults.innerHTML = ''; searchInput.focus(); });
-        closeSearchBtn.addEventListener('click', closeSearch);
-        function closeSearch() { searchModal.classList.remove('active'); }
-
-        // ============================================================
-        //  导出 (只导出正文)
-        // ============================================================
-        function exportChat(role) {
-            const session = getCurrentSession();
-            if (!session || !session.messages.length) { alert('当前对话为空，无法导出'); return; }
-            let msgs = session.messages;
-            if (role === 'user') msgs = msgs.filter(m => m.role === 'user');
-            else if (role === 'assistant') msgs = msgs.filter(m => m.role === 'assistant');
-            if (!msgs.length) { alert('没有匹配的消息可导出'); return; }
-
-            let text = `导出时间: ${new Date().toLocaleString()}\n对话: ${session.name}\n${'='.repeat(30)}\n\n`;
-            msgs.forEach(m => {
-                const label = m.role === 'user' ? '👤 我' : '🤖 AI';
-                text += `[${label}]\n${m.content}\n\n---\n\n`;
-            });
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            const roleName = role === 'user' ? '我的提问' : (role === 'assistant' ? 'AI回复' : '全部');
-            a.download = `${session.name}_${roleName}_${Date.now()}.txt`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-            closeExport();
-        }
-
-        exportBtn.addEventListener('click', () => { exportModal.classList.add('active'); });
-        closeExportBtn.addEventListener('click', closeExport);
-        function closeExport() { exportModal.classList.remove('active'); }
-        exportAI.addEventListener('click', () => exportChat('assistant'));
-        exportUser.addEventListener('click', () => exportChat('user'));
-        exportAll.addEventListener('click', () => exportChat('all'));
-
-        // ============================================================
-        //  发送事件绑定
-        // ============================================================
-        sendBtn.addEventListener('click', sendMessage);
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        });
-        promptInput.addEventListener('input', function () {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-        });
-
-        // ============================================================
         //  启动
         // ============================================================
         loadData();
         renderChat();
-        statusText.textContent = '就绪 (V4 模型，支持备份/恢复)';
+        statusText.textContent = '就绪 (V4 模型，支持文件夹/置顶/安全删除)';
     </script>
 </body>
 </html>

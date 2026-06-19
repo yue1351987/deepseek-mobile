@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My DeepSeek</title>
-    <!-- 样式部分（与之前相同，略作精简） -->
     <style>
-        /* ========== 基础变量 ========== */
+        /* ========== 基础变量（完整样式，同前） ========== */
         :root {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
@@ -1550,7 +1549,6 @@
                     if (ov.content) {
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
-                        // 只有存在 reasoning 且 showReasoning 开启时才显示
                         if (ov.reasoning && showReasoning) {
                             const details = document.createElement('details');
                             details.className = 'reasoning-box';
@@ -1596,7 +1594,6 @@
                         loadingWrap.appendChild(loadingMsgDiv);
                         turnWrapper.appendChild(loadingWrap);
                     } else {
-                        // 没有任何输出，显示占位
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
                         const placeholder = document.createElement('div');
@@ -1774,7 +1771,7 @@
         }
 
         // ============================================================
-        // 执行流式请求（关键修改：深度思考控制）
+        // 执行流式请求（深度思考控制）
         // ============================================================
         async function performStreamRequest(session, turnIdx, inputVersion, outputVersion) {
             const key = localStorage.getItem(KEY_STORAGE);
@@ -1786,7 +1783,6 @@
                 return;
             }
 
-            // 构建历史
             const history = [];
             const memoryLimit = memoryMode === 'window' ? 20 : Infinity;
             const startIdx = Math.max(0, turnIdx - memoryLimit);
@@ -1811,11 +1807,10 @@
                 max_tokens: 4096,
                 temperature: 0.7,
             };
-            // 显式控制 reasoning_effort
             if (deepThinking) {
                 requestBody.reasoning_effort = 'high';
             } else {
-                requestBody.reasoning_effort = 'low';  // 低消耗，且不返回详细推理
+                requestBody.reasoning_effort = 'low';
             }
 
             try {
@@ -1871,7 +1866,6 @@
                                         renderChat();
                                         chatBox.scrollTop = chatBox.scrollHeight;
                                     }
-                                    // 【关键】只有开启深度思考时才记录推理内容
                                     if (delta.reasoning_content && deepThinking) {
                                         reasoningContent += delta.reasoning_content;
                                         outputVersion.reasoning = reasoningContent;
@@ -2046,7 +2040,7 @@
         });
 
         // ============================================================
-        // 会话管理（沿用）
+        // 会话管理
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
@@ -2123,6 +2117,7 @@
             }
         }
 
+        // 直接导出的旧函数保留但不再绑定到按钮
         function exportSingleSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
             if (!session) return;
@@ -2145,6 +2140,16 @@
             a.download = `${session.name}_${Date.now()}.txt`;
             a.click();
             URL.revokeObjectURL(a.href);
+        }
+
+        // ============================================================
+        // 导出模态框相关函数
+        // ============================================================
+        function openExportModal() {
+            exportModal.classList.add('active');
+        }
+        function closeExport() {
+            exportModal.classList.remove('active');
         }
 
         // ============================================================
@@ -2190,12 +2195,13 @@
                 });
                 actions.appendChild(renameBtn);
 
+                // ---- 修改：导出按钮改为打开模态框 ----
                 const exportBtn = document.createElement('button');
                 exportBtn.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
                 exportBtn.title = '导出对话';
                 exportBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    exportSingleSession(session.id);
+                    openExportModal(); // 打开模态框
                 });
                 actions.appendChild(exportBtn);
 
@@ -2754,9 +2760,9 @@
             closeExport();
         }
 
+        // 绑定导出模态框事件
         exportModal.addEventListener('click', (e) => { if (e.target === exportModal) closeExport(); });
         closeExportBtn.addEventListener('click', closeExport);
-        function closeExport() { exportModal.classList.remove('active'); }
         exportAI.addEventListener('click', () => exportChat('assistant'));
         exportUser.addEventListener('click', () => exportChat('user'));
         exportAll.addEventListener('click', () => exportChat('all'));

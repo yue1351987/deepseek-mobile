@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My DeepSeek</title>
     <style>
-        /* ========== 基础变量（同前，略作精简） ========== */
+        /* ========== 基础变量（同前） ========== */
         :root {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
@@ -865,7 +865,7 @@
 </head>
 <body>
 
-    <!-- ====== 顶部导航（同前） ====== -->
+    <!-- ====== 顶部导航 ====== -->
     <div id="topbar">
         <button id="menuBtn" aria-label="菜单">
             <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -930,7 +930,7 @@
     <!-- 底部状态栏 -->
     <div id="statusBar"><span id="statusText"></span></div>
 
-    <!-- ====== 设置浮层面板（同前） ====== -->
+    <!-- ====== 设置浮层面板 ====== -->
     <div id="settingsOverlay">
         <div id="settingsPanel">
             <div class="panel-header"><h2>设置</h2><button class="close-btn" id="closeSettingsBtn">✕</button></div>
@@ -1051,7 +1051,7 @@
         let pendingMemory = 'full';
 
         const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v7';
-        const STORAGE_FOLDERS_KEY = 'deepseek_folders_v5'; // 版本升级，增加 collapsed
+        const STORAGE_FOLDERS_KEY = 'deepseek_folders_v5';
         const STORAGE_FAVORITES_KEY = 'deepseek_favorites_v4';
         const KEY_STORAGE = 'deepseek_api_key';
         const THEME_KEY = 'deepseek_theme';
@@ -1063,7 +1063,7 @@
         const FONT_SIZE_KEY = 'deepseek_font_size';
         const MEMORY_MODE_KEY = 'deepseek_memory_mode';
 
-        // DOM 引用（略）
+        // DOM 引用
         const chatBox = document.getElementById('chatBox');
         const promptInput = document.getElementById('prompt');
         const sendBtn = document.getElementById('sendBtn');
@@ -1144,7 +1144,7 @@
 
         function estimateTokens(text) { if (!text) return 0; return Math.ceil(text.length / 1.8); }
 
-        // 【修正】计算整个对话的总 Token（所有输入版本和输出版本）
+        // 计算整个对话的总 Token（所有输入版本和输出版本）
         function updateTokenCounter() {
             const session = getCurrentSession();
             if (!session) { convTokensLabel.textContent = '~0'; return; }
@@ -1359,7 +1359,6 @@
 
             const rawFolders = localStorage.getItem(STORAGE_FOLDERS_KEY);
             if (rawFolders) { try { folders = JSON.parse(rawFolders); } catch { folders = []; } }
-            // 确保每个 folder 有 collapsed 字段
             folders.forEach(f => { if (f.collapsed === undefined) f.collapsed = false; });
 
             const rawSessions = localStorage.getItem(STORAGE_SESSIONS_KEY);
@@ -1378,7 +1377,6 @@
                 });
                 saveSessions();
             }
-            // 确保每个turn有 inputVersions 结构
             sessions.forEach(s => {
                 if (!s.turns) s.turns = [];
                 s.turns.forEach(t => {
@@ -1411,7 +1409,7 @@
         }
 
         // ============================================================
-        // UI 更新函数
+        // UI 更新函数（同前）
         // ============================================================
         function updateModeUI() {
             const modelName = mode === 'flash' ? '快速' : '专家';
@@ -1469,7 +1467,7 @@
         }
 
         // ============================================================
-        // 目录功能
+        // 目录功能（同前）
         // ============================================================
         function updateTOC() {
             const session = getCurrentSession();
@@ -1511,7 +1509,7 @@
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
-        // 渲染聊天 - 双层版本（同前）
+        // 渲染聊天 - 双层版本（同前，但流式更新使用增量）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1800,7 +1798,85 @@
         }
 
         // ============================================================
-        // 执行流式请求（深度思考控制）
+        // 增量更新流式消息（不重新渲染整个聊天）
+        // ============================================================
+        let streamingMsgElement = null;
+        let streamingReasoningElement = null;
+
+        function updateStreamingMessage(turnIdx, content, reasoning) {
+            // 查找当前 turn 对应的 assistant 消息元素
+            const turnWrappers = chatBox.querySelectorAll('.turn-wrapper');
+            const targetTurn = turnWrappers[turnIdx];
+            if (!targetTurn) return;
+
+            // 查找 assistant 消息块
+            const assistantWraps = targetTurn.querySelectorAll('.msg-wrapper.assistant');
+            let assistantWrap = null;
+            // 如果已经有 assistant 消息，取最后一个（最新的）
+            if (assistantWraps.length > 0) {
+                assistantWrap = assistantWraps[assistantWraps.length - 1];
+            } else {
+                // 没有则创建一个新的
+                assistantWrap = document.createElement('div');
+                assistantWrap.className = 'msg-wrapper assistant';
+                targetTurn.appendChild(assistantWrap);
+            }
+
+            // 查找或创建 msg 元素
+            let msgDiv = assistantWrap.querySelector('.msg:not(.reasoning-box)');
+            if (!msgDiv) {
+                msgDiv = document.createElement('div');
+                msgDiv.className = 'msg';
+                // 添加光标闪烁类
+                msgDiv.classList.add('cursor-blink');
+                assistantWrap.appendChild(msgDiv);
+            }
+
+            // 更新内容
+            if (content !== undefined) {
+                // 保留光标闪烁
+                const cursorClass = 'cursor-blink';
+                if (!msgDiv.classList.contains(cursorClass)) {
+                    msgDiv.classList.add(cursorClass);
+                }
+                // 去除多余的空格换行问题，直接设置文本
+                msgDiv.textContent = content || ' ';
+            }
+
+            // 处理思考过程
+            if (reasoning !== undefined && reasoning.length > 0) {
+                // 查找已有的 reasoning-box
+                let reasonBox = assistantWrap.querySelector('.reasoning-box');
+                if (!reasonBox) {
+                    reasonBox = document.createElement('details');
+                    reasonBox.className = 'reasoning-box';
+                    const summary = document.createElement('summary');
+                    summary.textContent = '思考过程 (点击展开)';
+                    reasonBox.appendChild(summary);
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'reasoning-content';
+                    reasonBox.appendChild(contentDiv);
+                    // 插入到 msg 前面
+                    assistantWrap.insertBefore(reasonBox, msgDiv);
+                }
+                const contentDiv = reasonBox.querySelector('.reasoning-content');
+                if (contentDiv) {
+                    contentDiv.textContent = reasoning;
+                }
+                // 如果深度思考关闭，不显示
+                if (!deepThinking) {
+                    reasonBox.style.display = 'none';
+                } else {
+                    reasonBox.style.display = '';
+                }
+            }
+
+            // 滚动到底部
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // ============================================================
+        // 执行流式请求（优化增量更新）
         // ============================================================
         async function performStreamRequest(session, turnIdx, inputVersion, outputVersion) {
             const key = localStorage.getItem(KEY_STORAGE);
@@ -1812,6 +1888,7 @@
                 return;
             }
 
+            // 构建历史
             const history = [];
             const memoryLimit = memoryMode === 'window' ? 20 : Infinity;
             const startIdx = Math.max(0, turnIdx - memoryLimit);
@@ -1875,6 +1952,9 @@
                 outputVersion.reasoning = '';
                 outputVersion._loading = true;
 
+                // 先渲染一个占位（确保 DOM 存在）
+                renderChat();
+
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -1892,14 +1972,13 @@
                                     if (delta.content) {
                                         fullContent += delta.content;
                                         outputVersion.content = fullContent;
-                                        renderChat();
-                                        chatBox.scrollTop = chatBox.scrollHeight;
+                                        // 增量更新当前消息
+                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent);
                                     }
                                     if (delta.reasoning_content && deepThinking) {
                                         reasoningContent += delta.reasoning_content;
                                         outputVersion.reasoning = reasoningContent;
-                                        renderChat();
-                                        chatBox.scrollTop = chatBox.scrollHeight;
+                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent);
                                     }
                                 }
                             } catch (e) { /* ignore */ }
@@ -1907,8 +1986,22 @@
                     }
                 }
 
+                // 完成，移除闪烁光标
+                const turnWrappers = chatBox.querySelectorAll('.turn-wrapper');
+                if (turnWrappers[turnIdx]) {
+                    const assistantWraps = turnWrappers[turnIdx].querySelectorAll('.msg-wrapper.assistant');
+                    if (assistantWraps.length > 0) {
+                        const last = assistantWraps[assistantWraps.length - 1];
+                        const msgDiv = last.querySelector('.msg:not(.reasoning-box)');
+                        if (msgDiv) {
+                            msgDiv.classList.remove('cursor-blink');
+                        }
+                    }
+                }
+
                 outputVersion._loading = false;
                 saveSessions();
+                // 最后用 renderChat 保证数据一致性
                 renderChat();
                 statusShort.textContent = '✅ 回复完成';
                 setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
@@ -2024,7 +2117,7 @@
         });
 
         // ============================================================
-        // 附件管理
+        // 附件管理（同前）
         // ============================================================
         function renderAttachmentBar() {
             attachmentBar.innerHTML = '';
@@ -2187,7 +2280,7 @@
         }
 
         // ============================================================
-        // 渲染抽屉（增加折叠支持）
+        // 渲染抽屉（带折叠）
         // ============================================================
         function renderDrawer() {
             sessionListContainer.innerHTML = '';
@@ -2292,7 +2385,6 @@
                     }
                 });
 
-                // 文件夹头部（可点击折叠）
                 const header = document.createElement('div');
                 header.className = 'folder-header';
 
@@ -2300,7 +2392,6 @@
                 icon.className = 'folder-icon';
                 icon.textContent = '📁';
 
-                // 折叠图标
                 const toggleIcon = document.createElement('span');
                 toggleIcon.className = 'folder-toggle-icon' + (folder.collapsed ? ' collapsed' : '');
                 toggleIcon.textContent = '▼';
@@ -2344,7 +2435,6 @@
                 folderDiv.appendChild(header);
                 container.appendChild(folderDiv);
 
-                // 子会话列表（根据折叠状态显示/隐藏）
                 const childSessions = sessions.filter(s => s.folderId === folder.id);
                 if (childSessions.length > 0 && !folder.collapsed) {
                     const childrenDiv = document.createElement('div');
@@ -2358,11 +2448,9 @@
                     empty.textContent = '（空文件夹）';
                     container.appendChild(empty);
                 }
-                // 如果折叠，不显示子项
                 return container;
             }
 
-            // 渲染置顶文件夹、置顶对话、普通文件夹、普通对话（同前）
             if (pinnedFolders.length) {
                 const title = document.createElement('div');
                 title.className = 'drawer-section-title';
@@ -2579,7 +2667,7 @@
         function backupData() {
             try {
                 const data = {
-                    version: '7.1',
+                    version: '7.2',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     folders: folders,

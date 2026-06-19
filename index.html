@@ -259,6 +259,22 @@
         .reasoning-box summary:hover { opacity: 0.8; }
         .reasoning-content { white-space: pre-wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-light); max-height: 150px; overflow-y: auto; }
 
+        .continue-btn {
+            background: none;
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-top: 4px;
+        }
+        .continue-btn:hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+
         /* ========== 输入区域 ========== */
         #inputArea {
             background: var(--bg-surface);
@@ -1038,6 +1054,7 @@
         let pendingAttachments = [];
         let isStreaming = false;
         let abortController = null;
+        let streamingTurnIdx = null; // 当前正在流式输出的 turn 索引
 
         let mode = 'flash';
         let deepThinking = false;
@@ -1144,7 +1161,7 @@
 
         function estimateTokens(text) { if (!text) return 0; return Math.ceil(text.length / 1.8); }
 
-        // 计算整个对话的总 Token（所有输入版本和输出版本）
+        // 计算整个对话的总 Token
         function updateTokenCounter() {
             const session = getCurrentSession();
             if (!session) { convTokensLabel.textContent = '~0'; return; }
@@ -1393,6 +1410,10 @@
                     t.inputVersions.forEach(iv => {
                         if (!iv.outputVersions) iv.outputVersions = [];
                         if (iv.selectedOutputIdx === undefined) iv.selectedOutputIdx = 0;
+                        // 给每个输出版本增加 interrupted 字段
+                        iv.outputVersions.forEach(ov => {
+                            if (ov.interrupted === undefined) ov.interrupted = false;
+                        });
                     });
                 });
             });
@@ -1509,7 +1530,7 @@
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
-        // 渲染聊天 - 双层版本（同前，但流式更新使用增量）
+        // 渲染聊天 - 双层版本（包含继续生成按钮）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1528,7 +1549,8 @@
                     const iv = turn.inputVersions[ivIdx];
                     if (!iv) return;
                     const ovIdx = iv.selectedOutputIdx !== undefined ? iv.selectedOutputIdx : 0;
-                    const ov = iv.outputVersions[ovIdx] || { content: '', reasoning: '', _loading: false };
+                    const ov = iv.outputVersions[ovIdx] || { content: '', reasoning: '', _loading: false,
+                        interrupted: false };
 
                     const turnWrapper = document.createElement('div');
                     turnWrapper.className = 'turn-wrapper';
@@ -1607,6 +1629,19 @@
                             regenerateMessage(turnIdx);
                         });
                         assistantActions.appendChild(regenBtn);
+
+                        // 【新增】如果该输出被中断，显示继续生成按钮
+                        if (ov.interrupted && !ov._loading && !isStreaming) {
+                            const continueBtn = document.createElement('button');
+                            continueBtn.className = 'continue-btn';
+                            continueBtn.textContent = '继续生成';
+                            continueBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                continueGeneration(turnIdx);
+                            });
+                            assistantActions.appendChild(continueBtn);
+                        }
+
                         if (assistantActions.children.length > 0) {
                             assistantWrap.appendChild(assistantActions);
                         }
@@ -1787,6 +1822,7 @@
                 content: '',
                 reasoning: '',
                 _loading: true,
+                interrupted: false,
                 timestamp: Date.now()
             };
             iv.outputVersions.push(newOv);
@@ -1794,29 +1830,49 @@
             saveSessions();
             renderChat();
 
-            await performStreamRequest(session, turnIdx, iv, newOv);
+            streamingTurnIdx = turnIdx;
+            await performStreamRequest(session, turnIdx, iv, newOv, false);
         }
 
         // ============================================================
-        // 增量更新流式消息（不重新渲染整个聊天）
+        // 继续生成（追加内容，不新增版本）
         // ============================================================
-        let streamingMsgElement = null;
-        let streamingReasoningElement = null;
+        async function continueGeneration(turnIdx) {
+            if (isStreaming) return;
+            const session = getCurrentSession();
+            if (!session) return;
+            const turn = session.turns[turnIdx];
+            if (!turn) return;
+            const ivIdx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
+            const iv = turn.inputVersions[ivIdx];
+            if (!iv) return;
+            const ovIdx = iv.selectedOutputIdx !== undefined ? iv.selectedOutputIdx : 0;
+            const ov = iv.outputVersions[ovIdx];
+            if (!ov || !ov.content) return;
 
-        function updateStreamingMessage(turnIdx, content, reasoning) {
-            // 查找当前 turn 对应的 assistant 消息元素
+            // 清除中断标记，重新进入加载状态
+            ov.interrupted = false;
+            ov._loading = true;
+            saveSessions();
+            renderChat();
+
+            streamingTurnIdx = turnIdx;
+            await performStreamRequest(session, turnIdx, iv, ov, true);
+        }
+
+        // ============================================================
+        // 增量更新流式消息（支持追加模式）
+        // ============================================================
+        function updateStreamingMessage(turnIdx, content, reasoning, appendMode) {
             const turnWrappers = chatBox.querySelectorAll('.turn-wrapper');
             const targetTurn = turnWrappers[turnIdx];
             if (!targetTurn) return;
 
-            // 查找 assistant 消息块
             const assistantWraps = targetTurn.querySelectorAll('.msg-wrapper.assistant');
             let assistantWrap = null;
-            // 如果已经有 assistant 消息，取最后一个（最新的）
             if (assistantWraps.length > 0) {
                 assistantWrap = assistantWraps[assistantWraps.length - 1];
             } else {
-                // 没有则创建一个新的
                 assistantWrap = document.createElement('div');
                 assistantWrap.className = 'msg-wrapper assistant';
                 targetTurn.appendChild(assistantWrap);
@@ -1827,25 +1883,20 @@
             if (!msgDiv) {
                 msgDiv = document.createElement('div');
                 msgDiv.className = 'msg';
-                // 添加光标闪烁类
                 msgDiv.classList.add('cursor-blink');
                 assistantWrap.appendChild(msgDiv);
             }
 
-            // 更新内容
-            if (content !== undefined) {
-                // 保留光标闪烁
-                const cursorClass = 'cursor-blink';
-                if (!msgDiv.classList.contains(cursorClass)) {
-                    msgDiv.classList.add(cursorClass);
-                }
-                // 去除多余的空格换行问题，直接设置文本
+            // 如果是追加模式，将内容拼接到现有文本之后，否则直接替换
+            if (appendMode) {
+                const currentText = msgDiv.textContent || '';
+                msgDiv.textContent = currentText + (content || '');
+            } else {
                 msgDiv.textContent = content || ' ';
             }
 
-            // 处理思考过程
+            // 处理思考过程（类似）
             if (reasoning !== undefined && reasoning.length > 0) {
-                // 查找已有的 reasoning-box
                 let reasonBox = assistantWrap.querySelector('.reasoning-box');
                 if (!reasonBox) {
                     reasonBox = document.createElement('details');
@@ -1856,14 +1907,16 @@
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'reasoning-content';
                     reasonBox.appendChild(contentDiv);
-                    // 插入到 msg 前面
                     assistantWrap.insertBefore(reasonBox, msgDiv);
                 }
                 const contentDiv = reasonBox.querySelector('.reasoning-content');
                 if (contentDiv) {
-                    contentDiv.textContent = reasoning;
+                    if (appendMode) {
+                        contentDiv.textContent += reasoning;
+                    } else {
+                        contentDiv.textContent = reasoning;
+                    }
                 }
-                // 如果深度思考关闭，不显示
                 if (!deepThinking) {
                     reasonBox.style.display = 'none';
                 } else {
@@ -1871,14 +1924,13 @@
                 }
             }
 
-            // 滚动到底部
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         // ============================================================
-        // 执行流式请求（优化增量更新）
+        // 执行流式请求（支持追加模式）
         // ============================================================
-        async function performStreamRequest(session, turnIdx, inputVersion, outputVersion) {
+        async function performStreamRequest(session, turnIdx, inputVersion, outputVersion, appendMode) {
             const key = localStorage.getItem(KEY_STORAGE);
             if (!key) {
                 outputVersion._loading = false;
@@ -1903,7 +1955,19 @@
                     if (prevOv && prevOv.content) history.push({ role: 'assistant', content: prevOv.content });
                 }
             }
+
+            // 当前用户消息
             history.push({ role: 'user', content: inputVersion.content });
+
+            // 如果是追加模式，需要把已有的 assistant 内容作为历史的一部分，以便 AI 续写
+            // 但注意：历史中已经包含之前的完整对话，当前 turn 的 assistant 内容尚未加入历史，但我们需要告诉 AI 我们已经生成了一部分。
+            // 更好的方式：在消息列表中，将已生成的内容作为 assistant 消息，然后追加一条用户消息“继续生成”。
+            // 但这样可能会打乱历史结构。简便方法：在历史中插入一条 assistant 消息，内容为已生成的部分，然后追加一条 user 消息“继续”。
+            if (appendMode && outputVersion.content) {
+                // 将已生成的内容作为 assistant 消息插入历史
+                history.push({ role: 'assistant', content: outputVersion.content });
+                history.push({ role: 'user', content: '继续生成' });
+            }
 
             const model = mode === 'flash' ? 'deepseek-v4-flash' : 'deepseek-v4-pro';
             const requestBody = {
@@ -1945,15 +2009,16 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
-                let fullContent = '';
-                let reasoningContent = '';
+                let fullContent = outputVersion.content || ''; // 保留已有内容
+                let reasoningContent = outputVersion.reasoning || '';
 
-                outputVersion.content = '';
-                outputVersion.reasoning = '';
+                // 如果追加模式，已有内容保留，否则清空
+                if (!appendMode) {
+                    fullContent = '';
+                    reasoningContent = '';
+                }
+
                 outputVersion._loading = true;
-
-                // 先渲染一个占位（确保 DOM 存在）
-                renderChat();
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1972,13 +2037,12 @@
                                     if (delta.content) {
                                         fullContent += delta.content;
                                         outputVersion.content = fullContent;
-                                        // 增量更新当前消息
-                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent);
+                                        updateStreamingMessage(turnIdx, delta.content, reasoningContent, appendMode);
                                     }
                                     if (delta.reasoning_content && deepThinking) {
                                         reasoningContent += delta.reasoning_content;
                                         outputVersion.reasoning = reasoningContent;
-                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent);
+                                        updateStreamingMessage(turnIdx, fullContent, reasoningContent, appendMode);
                                     }
                                 }
                             } catch (e) { /* ignore */ }
@@ -1986,7 +2050,7 @@
                     }
                 }
 
-                // 完成，移除闪烁光标
+                // 完成，移除光标
                 const turnWrappers = chatBox.querySelectorAll('.turn-wrapper');
                 if (turnWrappers[turnIdx]) {
                     const assistantWraps = turnWrappers[turnIdx].querySelectorAll('.msg-wrapper.assistant');
@@ -2000,8 +2064,8 @@
                 }
 
                 outputVersion._loading = false;
+                outputVersion.interrupted = false;
                 saveSessions();
-                // 最后用 renderChat 保证数据一致性
                 renderChat();
                 statusShort.textContent = '✅ 回复完成';
                 setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
@@ -2009,14 +2073,16 @@
             } catch (error) {
                 if (error.name === 'AbortError') {
                     outputVersion._loading = false;
-                    outputVersion.content = outputVersion.content || '(已停止)';
+                    outputVersion.interrupted = true;
+                    // 保留已生成内容
                     saveSessions();
                     renderChat();
-                    statusShort.textContent = '⏹ 已停止';
-                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
+                    statusShort.textContent = '⏹ 已停止 (可继续生成)';
+                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止 (可继续生成)') statusShort.textContent = '就绪'; updateConvStatus(); }, 3000);
                 } else {
                     outputVersion._loading = false;
                     outputVersion.content = `❌ 失败: ${error.message}`;
+                    outputVersion.interrupted = false;
                     saveSessions();
                     renderChat();
                     statusShort.textContent = '⚠️ 生成失败';
@@ -2026,6 +2092,7 @@
                 sendBtn.disabled = false;
                 stopBtn.style.display = 'none';
                 abortController = null;
+                streamingTurnIdx = null;
                 updateConvStatus();
             }
         }
@@ -2667,7 +2734,7 @@
         function backupData() {
             try {
                 const data = {
-                    version: '7.2',
+                    version: '7.3',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     folders: folders,

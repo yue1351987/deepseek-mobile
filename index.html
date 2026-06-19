@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My DeepSeek</title>
+    <title>My DeepSeek · 双层版本</title>
     <style>
-        /* ========== 基础变量（沿用之前风格） ========== */
+        /* ========== 基础变量 ========== */
         :root {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
@@ -1000,7 +1000,7 @@
 
     <script>
         // ============================================================
-        // 数据层
+        // 数据层 - 双层版本结构
         // ============================================================
         let sessions = [];
         let folders = [];
@@ -1022,7 +1022,7 @@
         let pendingMode = 'flash';
         let pendingMemory = 'full';
 
-        const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v6';
+        const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v7';
         const STORAGE_FOLDERS_KEY = 'deepseek_folders_v4';
         const STORAGE_FAVORITES_KEY = 'deepseek_favorites_v4';
         const KEY_STORAGE = 'deepseek_api_key';
@@ -1121,11 +1121,14 @@
             if (!session) { convTokensLabel.textContent = '~0'; return; }
             let total = 0;
             session.turns.forEach(turn => {
-                const ver = turn.versions[turn.currentVersionIndex];
-                if (ver) {
-                    total += estimateTokens(ver.userContent || '');
-                    total += estimateTokens(ver.assistantContent || '');
-                    if (ver.reasoning) total += estimateTokens(ver.reasoning);
+                const iv = turn.inputVersions[turn.selectedInputIdx];
+                if (iv) {
+                    total += estimateTokens(iv.content || '');
+                    const ov = iv.outputVersions[iv.selectedOutputIdx];
+                    if (ov) {
+                        total += estimateTokens(ov.content || '');
+                        if (ov.reasoning) total += estimateTokens(ov.reasoning);
+                    }
                 }
             });
             convTokensLabel.textContent = `~${total}`;
@@ -1165,17 +1168,17 @@
         }
 
         // ============================================================
-        // 收藏功能
+        // 收藏功能（基于输入版本）
         // ============================================================
-        function toggleFavoriteMsg(sessionId, turnIndex, versionIndex) {
+        function toggleFavoriteMsg(sessionId, turnIdx, inputIdx) {
             const session = sessions.find(s => s.id === sessionId);
             if (!session) return;
-            const turn = session.turns[turnIndex];
+            const turn = session.turns[turnIdx];
             if (!turn) return;
-            const ver = turn.versions[versionIndex];
-            if (!ver || !ver.userContent) return;
+            const iv = turn.inputVersions[inputIdx];
+            if (!iv || !iv.content) return;
 
-            const key = `${sessionId}_${turnIndex}_${versionIndex}`;
+            const key = `${sessionId}_${turnIdx}_${inputIdx}`;
             const existingIdx = favorites.findIndex(f => f.key === key);
             if (existingIdx !== -1) {
                 favorites.splice(existingIdx, 1);
@@ -1187,12 +1190,12 @@
                 return;
             }
 
-            const summary = ver.userContent.length > 30 ? ver.userContent.slice(0, 30) + '…' : ver.userContent;
+            const summary = iv.content.length > 30 ? iv.content.slice(0, 30) + '…' : iv.content;
             favorites.push({
                 key: key,
                 sessionId: sessionId,
-                turnIndex: turnIndex,
-                versionIndex: versionIndex,
+                turnIndex: turnIdx,
+                inputIndex: inputIdx,
                 summary: summary,
                 role: 'user',
                 timestamp: Date.now()
@@ -1204,8 +1207,8 @@
             setTimeout(() => { if (statusShort.textContent === '⭐ 已收藏') statusShort.textContent = '就绪'; updateConvStatus(); }, 1000);
         }
 
-        function isMsgFavorited(sessionId, turnIndex, versionIndex) {
-            const key = `${sessionId}_${turnIndex}_${versionIndex}`;
+        function isMsgFavorited(sessionId, turnIdx, inputIdx) {
+            const key = `${sessionId}_${turnIdx}_${inputIdx}`;
             return favorites.some(f => f.key === key);
         }
 
@@ -1346,11 +1349,29 @@
                 });
                 saveSessions();
             }
+            // 确保每个turn有 inputVersions 结构
             sessions.forEach(s => {
                 if (!s.turns) s.turns = [];
                 s.turns.forEach(t => {
-                    if (!t.versions) t.versions = [];
-                    if (t.currentVersionIndex === undefined) t.currentVersionIndex = 0;
+                    if (!t.inputVersions) t.inputVersions = [];
+                    if (t.inputVersions.length === 0) {
+                        // 向后兼容：如果有旧数据，迁移
+                        if (t._legacy) {
+                            // 旧数据迁移逻辑略
+                        }
+                        // 保证至少有一个空输入版本
+                        t.inputVersions.push({
+                            id: generateId(),
+                            content: '',
+                            outputVersions: [],
+                            selectedOutputIdx: 0
+                        });
+                        t.selectedInputIdx = 0;
+                    }
+                    t.inputVersions.forEach(iv => {
+                        if (!iv.outputVersions) iv.outputVersions = [];
+                        if (iv.selectedOutputIdx === undefined) iv.selectedOutputIdx = 0;
+                    });
                 });
             });
             const active = sessions.find(s => s.active) || sessions[0];
@@ -1362,7 +1383,6 @@
             updateStorageInfo();
             updateTOC();
             updateConvStatus();
-            // 绑定发送按钮
             document.getElementById('sendBtn').onclick = sendMessage;
         }
 
@@ -1432,8 +1452,8 @@
             if (!session) return;
             const userMessages = session.turns
                 .map((turn, idx) => {
-                    const ver = turn.versions[turn.currentVersionIndex];
-                    return ver && ver.userContent ? { content: ver.userContent, idx: idx } : null;
+                    const iv = turn.inputVersions[turn.selectedInputIdx];
+                    return iv && iv.content ? { content: iv.content, idx: idx } : null;
                 })
                 .filter(Boolean);
             tocPanel.innerHTML = '';
@@ -1467,7 +1487,7 @@
         tocBtn.addEventListener('click', toggleTOC);
 
         // ============================================================
-        // 渲染聊天 - 基于 turns 和 versions
+        // 渲染聊天 - 双层版本
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1482,8 +1502,12 @@
                 chatBox.appendChild(wrap);
             } else {
                 session.turns.forEach((turn, turnIdx) => {
-                    const ver = turn.versions[turn.currentVersionIndex];
-                    if (!ver) return;
+                    const ivIdx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
+                    const iv = turn.inputVersions[ivIdx];
+                    if (!iv) return;
+                    const ovIdx = iv.selectedOutputIdx !== undefined ? iv.selectedOutputIdx : 0;
+                    const ov = iv.outputVersions[ovIdx] || { content: '', reasoning: '', _loading: false };
+
                     const turnWrapper = document.createElement('div');
                     turnWrapper.className = 'turn-wrapper';
                     turnWrapper.dataset.turnIndex = turnIdx;
@@ -1493,15 +1517,16 @@
                     userWrap.className = 'msg-wrapper user';
                     const userMsgDiv = document.createElement('div');
                     userMsgDiv.className = 'msg';
-                    userMsgDiv.textContent = ver.userContent || '(空消息)';
+                    userMsgDiv.textContent = iv.content || '(空消息)';
                     userWrap.appendChild(userMsgDiv);
                     turnWrapper.appendChild(userWrap);
 
                     // --- 用户消息操作栏 ---
                     const userActions = document.createElement('div');
                     userActions.className = 'msg-actions';
-                    if (turn.versions.length > 1) {
-                        const verControl = createVersionControl(turn, turnIdx);
+                    // 输入版本切换（如果有多版本）
+                    if (turn.inputVersions.length > 1) {
+                        const verControl = createInputVersionControl(turn, turnIdx);
                         userActions.appendChild(verControl);
                     }
                     const editBtn = document.createElement('button');
@@ -1511,7 +1536,7 @@
                         editUserMessage(turnIdx);
                     });
                     userActions.appendChild(editBtn);
-                    const isFav = isMsgFavorited(session.id, turnIdx, turn.currentVersionIndex);
+                    const isFav = isMsgFavorited(session.id, turnIdx, ivIdx);
                     const favBtn = document.createElement('button');
                     favBtn.className = 'fav-btn';
                     favBtn.textContent = isFav ? '★' : '☆';
@@ -1519,19 +1544,18 @@
                     favBtn.title = isFav ? '取消收藏' : '收藏此消息';
                     favBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        toggleFavoriteMsg(session.id, turnIdx, turn.currentVersionIndex);
+                        toggleFavoriteMsg(session.id, turnIdx, ivIdx);
                     });
                     userActions.appendChild(favBtn);
                     if (userActions.children.length > 0) {
                         userWrap.appendChild(userActions);
                     }
 
-                    // --- AI 回复（如果有内容） ---
-                    if (ver.assistantContent) {
+                    // --- AI 回复 ---
+                    if (ov.content) {
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
-                        // 仅当有推理内容且显示选项开启时才显示
-                        if (ver.reasoning && showReasoning) {
+                        if (ov.reasoning && showReasoning) {
                             const details = document.createElement('details');
                             details.className = 'reasoning-box';
                             details.open = false;
@@ -1540,19 +1564,20 @@
                             details.appendChild(summary);
                             const contentDiv = document.createElement('div');
                             contentDiv.className = 'reasoning-content';
-                            contentDiv.textContent = ver.reasoning;
+                            contentDiv.textContent = ov.reasoning;
                             details.appendChild(contentDiv);
                             assistantWrap.appendChild(details);
                         }
                         const assistantMsgDiv = document.createElement('div');
                         assistantMsgDiv.className = 'msg';
-                        assistantMsgDiv.textContent = ver.assistantContent;
+                        assistantMsgDiv.textContent = ov.content;
                         assistantWrap.appendChild(assistantMsgDiv);
 
                         const assistantActions = document.createElement('div');
                         assistantActions.className = 'msg-actions';
-                        if (turn.versions.length > 1) {
-                            const verControlAI = createVersionControl(turn, turnIdx);
+                        // 输出版本切换（如果有多版本）
+                        if (iv.outputVersions.length > 1) {
+                            const verControlAI = createOutputVersionControl(turn, turnIdx, ivIdx);
                             assistantActions.appendChild(verControlAI);
                         }
                         const regenBtn = document.createElement('button');
@@ -1565,9 +1590,8 @@
                         if (assistantActions.children.length > 0) {
                             assistantWrap.appendChild(assistantActions);
                         }
-
                         turnWrapper.appendChild(assistantWrap);
-                    } else if (ver._loading) {
+                    } else if (ov._loading) {
                         const loadingWrap = document.createElement('div');
                         loadingWrap.className = 'msg-wrapper assistant';
                         const loadingMsgDiv = document.createElement('div');
@@ -1576,6 +1600,26 @@
                         loadingMsgDiv.classList.add('cursor-blink');
                         loadingWrap.appendChild(loadingMsgDiv);
                         turnWrapper.appendChild(loadingWrap);
+                    } else {
+                        // 没有任何输出，显示一个占位提示（可点击重新生成）
+                        const assistantWrap = document.createElement('div');
+                        assistantWrap.className = 'msg-wrapper assistant';
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'msg';
+                        placeholder.textContent = '💬 点击“重新生成”开始对话';
+                        placeholder.style.color = 'var(--text-muted)';
+                        assistantWrap.appendChild(placeholder);
+                        const actions = document.createElement('div');
+                        actions.className = 'msg-actions';
+                        const regenBtn = document.createElement('button');
+                        regenBtn.textContent = '重新生成';
+                        regenBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            regenerateMessage(turnIdx);
+                        });
+                        actions.appendChild(regenBtn);
+                        assistantWrap.appendChild(actions);
+                        turnWrapper.appendChild(assistantWrap);
                     }
 
                     chatBox.appendChild(turnWrapper);
@@ -1589,26 +1633,26 @@
         }
 
         // ============================================================
-        // 版本控制组件
+        // 输入版本控制组件
         // ============================================================
-        function createVersionControl(turn, turnIdx) {
+        function createInputVersionControl(turn, turnIdx) {
             const container = document.createElement('span');
             container.className = 'version-control';
             const leftBtn = document.createElement('button');
             leftBtn.textContent = '◀';
             leftBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                changeVersion(turnIdx, -1);
+                switchInputVersion(turnIdx, -1);
             });
             const rightBtn = document.createElement('button');
             rightBtn.textContent = '▶';
             rightBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                changeVersion(turnIdx, 1);
+                switchInputVersion(turnIdx, 1);
             });
             const label = document.createElement('span');
-            const total = turn.versions.length;
-            const current = turn.currentVersionIndex !== undefined ? turn.currentVersionIndex : 0;
+            const total = turn.inputVersions.length;
+            const current = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
             label.textContent = `${current+1}/${total}`;
             container.appendChild(leftBtn);
             container.appendChild(label);
@@ -1617,114 +1661,163 @@
         }
 
         // ============================================================
-        // 切换版本
+        // 输出版本控制组件
         // ============================================================
-        function changeVersion(turnIdx, direction) {
+        function createOutputVersionControl(turn, turnIdx, inputIdx) {
+            const container = document.createElement('span');
+            container.className = 'version-control';
+            const leftBtn = document.createElement('button');
+            leftBtn.textContent = '◀';
+            leftBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                switchOutputVersion(turnIdx, inputIdx, -1);
+            });
+            const rightBtn = document.createElement('button');
+            rightBtn.textContent = '▶';
+            rightBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                switchOutputVersion(turnIdx, inputIdx, 1);
+            });
+            const label = document.createElement('span');
+            const iv = turn.inputVersions[inputIdx];
+            const total = iv.outputVersions.length;
+            const current = iv.selectedOutputIdx !== undefined ? iv.selectedOutputIdx : 0;
+            label.textContent = `${current+1}/${total}`;
+            container.appendChild(leftBtn);
+            container.appendChild(label);
+            container.appendChild(rightBtn);
+            return container;
+        }
+
+        // ============================================================
+        // 切换输入版本
+        // ============================================================
+        function switchInputVersion(turnIdx, direction) {
             const session = getCurrentSession();
             if (!session) return;
             const turn = session.turns[turnIdx];
             if (!turn) return;
-            const total = turn.versions.length;
+            const total = turn.inputVersions.length;
             if (total <= 1) return;
-            let idx = turn.currentVersionIndex !== undefined ? turn.currentVersionIndex : 0;
+            let idx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
             idx = (idx + direction + total) % total;
-            turn.currentVersionIndex = idx;
+            turn.selectedInputIdx = idx;
+            // 自动选中该输入版本的最后一个输出
+            const iv = turn.inputVersions[idx];
+            iv.selectedOutputIdx = iv.outputVersions.length - 1;
+            if (iv.selectedOutputIdx < 0) iv.selectedOutputIdx = 0;
             saveSessions();
             renderChat();
         }
 
         // ============================================================
-        // 编辑用户消息（新增版本）
+        // 切换输出版本（在同一输入版本下）
+        // ============================================================
+        function switchOutputVersion(turnIdx, inputIdx, direction) {
+            const session = getCurrentSession();
+            if (!session) return;
+            const turn = session.turns[turnIdx];
+            if (!turn) return;
+            const iv = turn.inputVersions[inputIdx];
+            if (!iv) return;
+            const total = iv.outputVersions.length;
+            if (total <= 1) return;
+            let idx = iv.selectedOutputIdx !== undefined ? iv.selectedOutputIdx : 0;
+            idx = (idx + direction + total) % total;
+            iv.selectedOutputIdx = idx;
+            saveSessions();
+            renderChat();
+        }
+
+        // ============================================================
+        // 编辑用户消息（新增输入版本）
         // ============================================================
         function editUserMessage(turnIdx) {
             const session = getCurrentSession();
             if (!session) return;
             const turn = session.turns[turnIdx];
             if (!turn) return;
-            const ver = turn.versions[turn.currentVersionIndex];
-            if (!ver) return;
-            const newText = prompt('修改你的消息：', ver.userContent);
+            const ivIdx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
+            const iv = turn.inputVersions[ivIdx];
+            if (!iv) return;
+            const newText = prompt('修改你的消息：', iv.content);
             if (newText === null || newText.trim() === '') return;
 
-            const newVersion = {
-                userContent: newText.trim(),
-                assistantContent: '',
-                reasoning: '',
-                _loading: true,
-                timestamp: Date.now()
+            // 新建输入版本
+            const newIv = {
+                id: generateId(),
+                content: newText.trim(),
+                outputVersions: [],
+                selectedOutputIdx: 0
             };
-            turn.versions.push(newVersion);
-            turn.currentVersionIndex = turn.versions.length - 1;
+            turn.inputVersions.push(newIv);
+            turn.selectedInputIdx = turn.inputVersions.length - 1;
+            // 自动生成第一个输出（调用重新生成）
             saveSessions();
             renderChat();
             regenerateMessage(turnIdx);
         }
 
         // ============================================================
-        // 重新生成 AI 回复（新增版本，流式）
+        // 重新生成 AI 回复（在当前输入版本下新增输出版本）
         // ============================================================
         async function regenerateMessage(turnIdx) {
             const session = getCurrentSession();
             if (!session) return;
             const turn = session.turns[turnIdx];
             if (!turn) return;
-            const ver = turn.versions[turn.currentVersionIndex];
-            if (!ver || !ver.userContent) {
-                alert('没有用户消息可回复');
+            const ivIdx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
+            const iv = turn.inputVersions[ivIdx];
+            if (!iv || !iv.content) {
+                alert('当前输入版本为空，请先输入内容');
                 return;
             }
 
-            // 如果已有 AI 内容，则新增版本（复制当前用户内容，AI 内容留空）
-            if (ver.assistantContent) {
-                const newVersion = {
-                    userContent: ver.userContent,
-                    assistantContent: '',
-                    reasoning: '',
-                    _loading: true,
-                    timestamp: Date.now()
-                };
-                turn.versions.push(newVersion);
-                turn.currentVersionIndex = turn.versions.length - 1;
-                saveSessions();
-                renderChat();
-                // 重新获取最新版本引用
-                const newTurn = session.turns[turnIdx];
-                const newVer = newTurn.versions[newTurn.currentVersionIndex];
-                if (!newVer) return;
-                await performStreamRequest(session, turnIdx, newVer);
-                return;
-            }
+            // 新增一个输出版本（空内容，置 loading 状态）
+            const newOv = {
+                content: '',
+                reasoning: '',
+                _loading: true,
+                timestamp: Date.now()
+            };
+            iv.outputVersions.push(newOv);
+            iv.selectedOutputIdx = iv.outputVersions.length - 1;
+            saveSessions();
+            renderChat();
 
-            // 否则直接在当前版本上生成（首次生成）
-            await performStreamRequest(session, turnIdx, ver);
+            // 执行请求
+            await performStreamRequest(session, turnIdx, iv, newOv);
         }
 
         // ============================================================
-        // 执行流式请求（共用）
+        // 执行流式请求
         // ============================================================
-        async function performStreamRequest(session, turnIdx, ver) {
+        async function performStreamRequest(session, turnIdx, inputVersion, outputVersion) {
             const key = localStorage.getItem(KEY_STORAGE);
             if (!key) {
-                ver._loading = false;
-                ver.assistantContent = '❌ 未找到 API Key';
+                outputVersion._loading = false;
+                outputVersion.content = '❌ 未找到 API Key';
                 saveSessions();
                 renderChat();
                 return;
             }
 
-            // 构建上下文（根据记忆策略）
+            // 构建历史：当前 turn 之前的所有 turn，使用每个 turn 当前选中的输入版本及其最新输出
             const history = [];
             const memoryLimit = memoryMode === 'window' ? 20 : Infinity;
             const startIdx = Math.max(0, turnIdx - memoryLimit);
             for (let i = startIdx; i < turnIdx; i++) {
                 const prevTurn = session.turns[i];
-                const prevVer = prevTurn.versions[prevTurn.currentVersionIndex];
-                if (prevVer) {
-                    if (prevVer.userContent) history.push({ role: 'user', content: prevVer.userContent });
-                    if (prevVer.assistantContent) history.push({ role: 'assistant', content: prevVer.assistantContent });
+                const prevIvIdx = prevTurn.selectedInputIdx !== undefined ? prevTurn.selectedInputIdx : 0;
+                const prevIv = prevTurn.inputVersions[prevIvIdx];
+                if (prevIv) {
+                    if (prevIv.content) history.push({ role: 'user', content: prevIv.content });
+                    const prevOvIdx = prevIv.selectedOutputIdx !== undefined ? prevIv.selectedOutputIdx : 0;
+                    const prevOv = prevIv.outputVersions[prevOvIdx];
+                    if (prevOv && prevOv.content) history.push({ role: 'assistant', content: prevOv.content });
                 }
             }
-            history.push({ role: 'user', content: ver.userContent });
+            history.push({ role: 'user', content: inputVersion.content });
 
             const model = mode === 'flash' ? 'deepseek-v4-flash' : 'deepseek-v4-pro';
             const requestBody = {
@@ -1734,11 +1827,9 @@
                 max_tokens: 4096,
                 temperature: 0.7,
             };
-            // 【关键修正】只有开启深度思考时才设置 reasoning_effort
             if (deepThinking) {
                 requestBody.reasoning_effort = 'high';
             }
-            // 如果关闭深度思考，则不发送 reasoning_effort 字段，避免返回推理内容
 
             try {
                 isStreaming = true;
@@ -1769,9 +1860,9 @@
                 let fullContent = '';
                 let reasoningContent = '';
 
-                ver.assistantContent = '';
-                ver.reasoning = '';
-                ver._loading = true;
+                outputVersion.content = '';
+                outputVersion.reasoning = '';
+                outputVersion._loading = true;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1789,13 +1880,13 @@
                                 if (delta) {
                                     if (delta.content) {
                                         fullContent += delta.content;
-                                        ver.assistantContent = fullContent;
+                                        outputVersion.content = fullContent;
                                         renderChat();
                                         chatBox.scrollTop = chatBox.scrollHeight;
                                     }
                                     if (delta.reasoning_content) {
                                         reasoningContent += delta.reasoning_content;
-                                        ver.reasoning = reasoningContent;
+                                        outputVersion.reasoning = reasoningContent;
                                         renderChat();
                                         chatBox.scrollTop = chatBox.scrollHeight;
                                     }
@@ -1805,7 +1896,7 @@
                     }
                 }
 
-                ver._loading = false;
+                outputVersion._loading = false;
                 saveSessions();
                 renderChat();
                 statusShort.textContent = '✅ 回复完成';
@@ -1813,15 +1904,15 @@
 
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    ver._loading = false;
-                    ver.assistantContent = ver.assistantContent || '(已停止)';
+                    outputVersion._loading = false;
+                    outputVersion.content = outputVersion.content || '(已停止)';
                     saveSessions();
                     renderChat();
                     statusShort.textContent = '⏹ 已停止';
                     setTimeout(() => { if (statusShort.textContent === '⏹ 已停止') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
                 } else {
-                    ver._loading = false;
-                    ver.assistantContent = `❌ 失败: ${error.message}`;
+                    outputVersion._loading = false;
+                    outputVersion.content = `❌ 失败: ${error.message}`;
                     saveSessions();
                     renderChat();
                     statusShort.textContent = '⚠️ 生成失败';
@@ -1836,7 +1927,7 @@
         }
 
         // ============================================================
-        // 发送新消息（创建新 Turn）
+        // 发送新消息（创建新回合，包含第一个输入版本）
         // ============================================================
         async function sendMessage() {
             if (isStreaming) {
@@ -1868,16 +1959,15 @@
 
             const userContent = text || '(文件上传)';
 
-            // 创建新回合
+            // 创建新回合，包含一个输入版本
             const newTurn = {
-                versions: [{
-                    userContent: userContent,
-                    assistantContent: '',
-                    reasoning: '',
-                    _loading: true,
-                    timestamp: Date.now()
+                inputVersions: [{
+                    id: generateId(),
+                    content: userContent,
+                    outputVersions: [],
+                    selectedOutputIdx: 0
                 }],
-                currentVersionIndex: 0
+                selectedInputIdx: 0
             };
             session.turns.push(newTurn);
             const turnIdx = session.turns.length - 1;
@@ -1889,6 +1979,7 @@
             pendingAttachments = [];
             renderAttachmentBar();
 
+            // 自动触发重新生成（第一个输出）
             await regenerateMessage(turnIdx);
         }
 
@@ -1969,7 +2060,7 @@
         });
 
         // ============================================================
-        // 文件夹 & 会话管理
+        // 文件夹 & 会话管理（沿用之前的，略作调整）
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
@@ -2052,13 +2143,15 @@
             if (!session.turns.length) { alert('该对话为空，无法导出'); return; }
             let text = `导出时间: ${new Date().toLocaleString()}\n对话: ${session.name}\n${'='.repeat(30)}\n\n`;
             session.turns.forEach((turn, idx) => {
-                const ver = turn.versions[turn.currentVersionIndex];
-                if (ver) {
-                    text += `[回合 ${idx+1}]\n`;
-                    if (ver.userContent) text += `👤 我: ${ver.userContent}\n`;
-                    if (ver.assistantContent) text += `🤖 AI: ${ver.assistantContent}\n`;
-                    text += '\n---\n\n';
-                }
+                const ivIdx = turn.selectedInputIdx !== undefined ? turn.selectedInputIdx : 0;
+                const iv = turn.inputVersions[ivIdx];
+                if (!iv) return;
+                const ovIdx = iv.selectedOutputIdx !== undefined ? iv.selectedOutputIdx : 0;
+                const ov = iv.outputVersions[ovIdx] || { content: '' };
+                text += `[回合 ${idx+1}]\n`;
+                if (iv.content) text += `👤 我: ${iv.content}\n`;
+                if (ov.content) text += `🤖 AI: ${ov.content}\n`;
+                text += '\n---\n\n';
             });
             const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
             const a = document.createElement('a');
@@ -2069,11 +2162,10 @@
         }
 
         // ============================================================
-        // 渲染抽屉
+        // 渲染抽屉（同之前，略调整）
         // ============================================================
         function renderDrawer() {
             sessionListContainer.innerHTML = '';
-
             const currentSessionId = currentId;
             const pinnedFolders = folders.filter(f => f.pinned);
             const unpinnedFolders = folders.filter(f => !f.pinned);
@@ -2321,7 +2413,7 @@
         });
 
         // ============================================================
-        // 设置面板交互
+        // 设置面板交互（同之前，略）
         // ============================================================
         settingsBtn.addEventListener('click', () => { settingsOverlay.classList.add('active'); });
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });
@@ -2442,7 +2534,7 @@
         function backupData() {
             try {
                 const data = {
-                    version: '6.1',
+                    version: '7.0',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     folders: folders,
@@ -2591,9 +2683,9 @@
             let results = [];
             sessions.forEach(s => {
                 s.turns.forEach((turn, tIdx) => {
-                    const ver = turn.versions[turn.currentVersionIndex];
-                    if (!ver) return;
-                    const content = (ver.userContent || '') + ' ' + (ver.assistantContent || '');
+                    const iv = turn.inputVersions[turn.selectedInputIdx];
+                    if (!iv) return;
+                    const content = (iv.content || '') + ' ' + (iv.outputVersions[iv.selectedOutputIdx]?.content || '');
                     if (content.toLowerCase().includes(q)) {
                         results.push({
                             sessionId: s.id,
@@ -2655,13 +2747,14 @@
             if (!session || !session.turns.length) { alert('当前对话为空，无法导出'); return; }
             let text = `导出时间: ${new Date().toLocaleString()}\n对话: ${session.name}\n${'='.repeat(30)}\n\n`;
             session.turns.forEach((turn, idx) => {
-                const ver = turn.versions[turn.currentVersionIndex];
-                if (!ver) return;
+                const iv = turn.inputVersions[turn.selectedInputIdx];
+                if (!iv) return;
+                const ov = iv.outputVersions[iv.selectedOutputIdx] || { content: '' };
                 if (role === 'user' || role === 'all') {
-                    text += `[👤 我] (回合 ${idx+1})\n${ver.userContent || '(空)'}\n\n`;
+                    text += `[👤 我] (回合 ${idx+1})\n${iv.content || '(空)'}\n\n`;
                 }
-                if ((role === 'assistant' || role === 'all') && ver.assistantContent) {
-                    text += `[🤖 AI] (回合 ${idx+1})\n${ver.assistantContent}\n\n`;
+                if ((role === 'assistant' || role === 'all') && ov.content) {
+                    text += `[🤖 AI] (回合 ${idx+1})\n${ov.content}\n\n`;
                 }
                 text += '---\n\n';
             });

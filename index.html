@@ -165,7 +165,6 @@
             gap: 12px;
             background: var(--bg-main);
         }
-        /* 新结构：每个回合包含用户消息和助手消息 */
         .turn-wrapper {
             display: flex;
             flex-direction: column;
@@ -1023,7 +1022,7 @@
         let pendingMode = 'flash';
         let pendingMemory = 'full';
 
-        const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v5'; // 新版本号
+        const STORAGE_SESSIONS_KEY = 'deepseek_sessions_v6';
         const STORAGE_FOLDERS_KEY = 'deepseek_folders_v4';
         const STORAGE_FAVORITES_KEY = 'deepseek_favorites_v4';
         const KEY_STORAGE = 'deepseek_api_key';
@@ -1166,7 +1165,7 @@
         }
 
         // ============================================================
-        // 收藏功能（消息收藏基于 turn 和版本索引）
+        // 收藏功能
         // ============================================================
         function toggleFavoriteMsg(sessionId, turnIndex, versionIndex) {
             const session = sessions.find(s => s.id === sessionId);
@@ -1338,7 +1337,6 @@
             if (rawFavorites) { try { favorites = JSON.parse(rawFavorites); } catch { favorites = []; } }
 
             if (!sessions.length) {
-                // 新会话结构
                 sessions.push({
                     id: generateId(),
                     name: '新对话',
@@ -1348,9 +1346,12 @@
                 });
                 saveSessions();
             }
-            // 确保每个会话有 turns 字段
             sessions.forEach(s => {
                 if (!s.turns) s.turns = [];
+                s.turns.forEach(t => {
+                    if (!t.versions) t.versions = [];
+                    if (t.currentVersionIndex === undefined) t.currentVersionIndex = 0;
+                });
             });
             const active = sessions.find(s => s.active) || sessions[0];
             currentId = active.id;
@@ -1499,12 +1500,10 @@
                     // --- 用户消息操作栏 ---
                     const userActions = document.createElement('div');
                     userActions.className = 'msg-actions';
-                    // 版本切换（如果有多版本）
                     if (turn.versions.length > 1) {
-                        const verControl = createVersionControl(turn, turnIdx, 'user');
+                        const verControl = createVersionControl(turn, turnIdx);
                         userActions.appendChild(verControl);
                     }
-                    // 编辑按钮
                     const editBtn = document.createElement('button');
                     editBtn.textContent = '编辑';
                     editBtn.addEventListener('click', (e) => {
@@ -1512,7 +1511,6 @@
                         editUserMessage(turnIdx);
                     });
                     userActions.appendChild(editBtn);
-                    // 收藏按钮
                     const isFav = isMsgFavorited(session.id, turnIdx, turn.currentVersionIndex);
                     const favBtn = document.createElement('button');
                     favBtn.className = 'fav-btn';
@@ -1532,7 +1530,6 @@
                     if (ver.assistantContent) {
                         const assistantWrap = document.createElement('div');
                         assistantWrap.className = 'msg-wrapper assistant';
-                        // 思考过程
                         if (ver.reasoning && showReasoning) {
                             const details = document.createElement('details');
                             details.className = 'reasoning-box';
@@ -1551,15 +1548,12 @@
                         assistantMsgDiv.textContent = ver.assistantContent;
                         assistantWrap.appendChild(assistantMsgDiv);
 
-                        // --- AI 操作栏 ---
                         const assistantActions = document.createElement('div');
                         assistantActions.className = 'msg-actions';
-                        // 版本切换（如果有多版本）
                         if (turn.versions.length > 1) {
-                            const verControlAI = createVersionControl(turn, turnIdx, 'assistant');
+                            const verControlAI = createVersionControl(turn, turnIdx);
                             assistantActions.appendChild(verControlAI);
                         }
-                        // 重新生成按钮
                         const regenBtn = document.createElement('button');
                         regenBtn.textContent = '重新生成';
                         regenBtn.addEventListener('click', (e) => {
@@ -1573,7 +1567,6 @@
 
                         turnWrapper.appendChild(assistantWrap);
                     } else if (ver._loading) {
-                        // 加载占位
                         const loadingWrap = document.createElement('div');
                         loadingWrap.className = 'msg-wrapper assistant';
                         const loadingMsgDiv = document.createElement('div');
@@ -1595,9 +1588,9 @@
         }
 
         // ============================================================
-        // 版本控制组件（通用）
+        // 版本控制组件
         // ============================================================
-        function createVersionControl(turn, turnIdx, role) {
+        function createVersionControl(turn, turnIdx) {
             const container = document.createElement('span');
             container.className = 'version-control';
             const leftBtn = document.createElement('button');
@@ -1623,7 +1616,7 @@
         }
 
         // ============================================================
-        // 切换版本（同时更新用户和AI）
+        // 切换版本
         // ============================================================
         function changeVersion(turnIdx, direction) {
             const session = getCurrentSession();
@@ -1652,42 +1645,8 @@
             const newText = prompt('修改你的消息：', ver.userContent);
             if (newText === null || newText.trim() === '') return;
 
-            // 新增版本
             const newVersion = {
                 userContent: newText.trim(),
-                assistantContent: '',  // 清空
-                reasoning: '',
-                _loading: true,
-                timestamp: Date.now()
-            };
-            turn.versions.push(newVersion);
-            turn.currentVersionIndex = turn.versions.length - 1;
-            saveSessions();
-            renderChat();
-            // 自动触发重新生成
-            regenerateMessage(turnIdx);
-        }
-
-        // ============================================================
-        // 重新生成 AI 回复（新增版本）
-        // ============================================================
-        async function regenerateMessage(turnIdx) {
-            const session = getCurrentSession();
-            if (!session) return;
-            const turn = session.turns[turnIdx];
-            if (!turn) return;
-            const ver = turn.versions[turn.currentVersionIndex];
-            if (!ver) return;
-
-            // 如果没有用户内容，无法生成
-            if (!ver.userContent) {
-                alert('没有用户消息可回复');
-                return;
-            }
-
-            // 如果已有 AI 内容，则新增版本（复制当前用户内容，AI 内容留空）
-            const newVersion = {
-                userContent: ver.userContent,
                 assistantContent: '',
                 reasoning: '',
                 _loading: true,
@@ -1697,22 +1656,67 @@
             turn.currentVersionIndex = turn.versions.length - 1;
             saveSessions();
             renderChat();
+            regenerateMessage(turnIdx);
+        }
 
+        // ============================================================
+        // 重新生成 AI 回复（新增版本，流式）
+        // ============================================================
+        async function regenerateMessage(turnIdx) {
+            const session = getCurrentSession();
+            if (!session) return;
+            const turn = session.turns[turnIdx];
+            if (!turn) return;
+            const ver = turn.versions[turn.currentVersionIndex];
+            if (!ver || !ver.userContent) {
+                alert('没有用户消息可回复');
+                return;
+            }
+
+            // 如果已有 AI 内容，则新增版本（复制当前用户内容，AI 内容留空）
+            if (ver.assistantContent) {
+                const newVersion = {
+                    userContent: ver.userContent,
+                    assistantContent: '',
+                    reasoning: '',
+                    _loading: true,
+                    timestamp: Date.now()
+                };
+                turn.versions.push(newVersion);
+                turn.currentVersionIndex = turn.versions.length - 1;
+                saveSessions();
+                renderChat();
+                // 重新获取最新版本引用
+                const newTurn = session.turns[turnIdx];
+                const newVer = newTurn.versions[newTurn.currentVersionIndex];
+                if (!newVer) return;
+                // 继续用 newVer 进行流式请求
+                await performStreamRequest(session, turnIdx, newVer);
+                return;
+            }
+
+            // 否则直接在当前版本上生成（首次生成）
+            await performStreamRequest(session, turnIdx, ver);
+        }
+
+        // ============================================================
+        // 执行流式请求（共用）
+        // ============================================================
+        async function performStreamRequest(session, turnIdx, ver) {
             const key = localStorage.getItem(KEY_STORAGE);
             if (!key) {
-                alert('请先保存 API Key');
-                // 标记加载失败
-                const currentVer = turn.versions[turn.currentVersionIndex];
-                currentVer._loading = false;
-                currentVer.assistantContent = '❌ 未找到 API Key';
+                ver._loading = false;
+                ver.assistantContent = '❌ 未找到 API Key';
                 saveSessions();
                 renderChat();
                 return;
             }
 
-            // 构建上下文：该 turn 之前的所有 turn 的当前版本
+            // 构建上下文（根据记忆策略）
             const history = [];
-            for (let i = 0; i < turnIdx; i++) {
+            const memoryLimit = memoryMode === 'window' ? 20 : Infinity;
+            const startIdx = Math.max(0, turnIdx - memoryLimit);
+            for (let i = startIdx; i < turnIdx; i++) {
                 const prevTurn = session.turns[i];
                 const prevVer = prevTurn.versions[prevTurn.currentVersionIndex];
                 if (prevVer) {
@@ -1720,30 +1724,38 @@
                     if (prevVer.assistantContent) history.push({ role: 'assistant', content: prevVer.assistantContent });
                 }
             }
-            // 当前用户消息
             history.push({ role: 'user', content: ver.userContent });
 
-            try {
-                const model = mode === 'flash' ? 'deepseek-v4-flash' : 'deepseek-v4-pro';
-                const requestBody = {
-                    model: model,
-                    messages: history,
-                    stream: false,
-                    max_tokens: 4096
-                };
-                if (deepThinking) {
-                    requestBody.reasoning_effort = 'high';
-                } else {
-                    requestBody.reasoning_effort = 'low';
-                }
+            const model = mode === 'flash' ? 'deepseek-v4-flash' : 'deepseek-v4-pro';
+            const requestBody = {
+                model: model,
+                messages: history,
+                stream: true,
+                max_tokens: 4096,
+                temperature: 0.7,
+            };
+            if (deepThinking) {
+                requestBody.reasoning_effort = 'high';
+            } else {
+                requestBody.reasoning_effort = 'low';
+            }
 
+            try {
+                isStreaming = true;
+                sendBtn.disabled = true;
+                stopBtn.style.display = 'flex';
+                statusShort.textContent = '⏳ 生成中...';
+                updateConvStatus();
+
+                abortController = new AbortController();
                 const response = await fetch('https://api.deepseek.com/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${key}`
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify(requestBody),
+                    signal: abortController.signal
                 });
 
                 if (!response.ok) {
@@ -1751,27 +1763,77 @@
                     throw new Error(`API错误(${response.status}): ${errData.error?.message || '请检查Key'}`);
                 }
 
-                const data = await response.json();
-                const reply = data.choices?.[0]?.message?.content || '无回复';
-                const reasoning = data.choices?.[0]?.message?.reasoning || '';
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullContent = '';
+                let reasoningContent = '';
 
-                // 更新当前版本
-                const currentVer = turn.versions[turn.currentVersionIndex];
-                currentVer.assistantContent = reply;
-                currentVer.reasoning = reasoning || '';
-                currentVer._loading = false;
+                // 清空旧的 assistant 内容（如果有）
+                ver.assistantContent = '';
+                ver.reasoning = '';
+                ver._loading = true; // 保持加载状态
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const payload = line.slice(6).trim();
+                            if (payload === '[DONE]') continue;
+                            try {
+                                const json = JSON.parse(payload);
+                                const delta = json.choices?.[0]?.delta;
+                                if (delta) {
+                                    if (delta.content) {
+                                        fullContent += delta.content;
+                                        ver.assistantContent = fullContent;
+                                        renderChat(); // 实时更新
+                                        chatBox.scrollTop = chatBox.scrollHeight;
+                                    }
+                                    if (delta.reasoning_content) {
+                                        reasoningContent += delta.reasoning_content;
+                                        ver.reasoning = reasoningContent;
+                                        renderChat();
+                                        chatBox.scrollTop = chatBox.scrollHeight;
+                                    }
+                                }
+                            } catch (e) { /* ignore */ }
+                        }
+                    }
+                }
+
+                // 完成
+                ver._loading = false;
                 saveSessions();
                 renderChat();
                 statusShort.textContent = '✅ 回复完成';
                 setTimeout(() => { if (statusShort.textContent === '✅ 回复完成') statusShort.textContent = '就绪'; updateConvStatus(); }, 2000);
 
             } catch (error) {
-                const currentVer = turn.versions[turn.currentVersionIndex];
-                currentVer._loading = false;
-                currentVer.assistantContent = `❌ 失败: ${error.message}`;
-                saveSessions();
-                renderChat();
-                statusShort.textContent = '⚠️ 生成失败';
+                if (error.name === 'AbortError') {
+                    ver._loading = false;
+                    ver.assistantContent = ver.assistantContent || '(已停止)';
+                    saveSessions();
+                    renderChat();
+                    statusShort.textContent = '⏹ 已停止';
+                    setTimeout(() => { if (statusShort.textContent === '⏹ 已停止') statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
+                } else {
+                    ver._loading = false;
+                    ver.assistantContent = `❌ 失败: ${error.message}`;
+                    saveSessions();
+                    renderChat();
+                    statusShort.textContent = '⚠️ 生成失败';
+                }
+            } finally {
+                isStreaming = false;
+                sendBtn.disabled = false;
+                stopBtn.style.display = 'none';
+                abortController = null;
+                updateConvStatus();
             }
         }
 
@@ -1779,28 +1841,20 @@
         // 发送新消息（创建新 Turn）
         // ============================================================
         async function sendMessage() {
-            console.log('[sendMessage] 开始执行');
             if (isStreaming) {
-                const errMsg = '⏳ 正在生成中，请等待完成或双击标题重置';
-                console.warn(errMsg);
-                showErrorInChat(errMsg);
-                alert(errMsg);
+                alert('⏳ 正在生成中，请等待完成或点击停止');
                 return;
             }
 
             const key = localStorage.getItem(KEY_STORAGE);
             if (!key) {
-                const errMsg = '❌ 未找到 API Key，请先在设置中保存 Key';
-                showErrorInChat(errMsg);
-                alert(errMsg);
+                alert('❌ 未找到 API Key，请先在设置中保存 Key');
                 return;
             }
 
             const text = promptInput.value.trim();
             if (!text && pendingAttachments.length === 0) {
-                const errMsg = '⚠️ 请输入问题或上传文件';
-                showErrorInChat(errMsg);
-                alert(errMsg);
+                alert('⚠️ 请输入问题或上传文件');
                 return;
             }
 
@@ -1809,16 +1863,13 @@
                 createNewSession();
                 session = getCurrentSession();
                 if (!session) {
-                    const errMsg = '❌ 无法创建或获取会话';
-                    showErrorInChat(errMsg);
-                    alert(errMsg);
+                    alert('❌ 无法创建会话');
                     return;
                 }
             }
 
-            // 处理附件（简化，暂时只支持文本）
-            // 附件处理可扩展，这里只记录用户输入
-            const userContent = text;
+            // 简化：只处理文本消息，附件暂只作展示
+            const userContent = text || '(文件上传)';
 
             // 创建新回合
             const newTurn = {
@@ -1842,37 +1893,8 @@
             pendingAttachments = [];
             renderAttachmentBar();
 
-            // 开始生成 AI 回复
+            // 开始生成
             await regenerateMessage(turnIdx);
-        }
-
-        // ============================================================
-        // 辅助函数：在聊天框显示错误消息（创建临时 Turn）
-        // ============================================================
-        function showErrorInChat(msg) {
-            const session = getCurrentSession();
-            if (!session) {
-                createNewSession();
-                session = getCurrentSession();
-                if (!session) {
-                    alert('严重错误：无法创建会话，请刷新页面重试。');
-                    return;
-                }
-            }
-            // 添加一个错误回合
-            const errTurn = {
-                versions: [{
-                    userContent: '系统错误',
-                    assistantContent: '❌ ' + msg,
-                    reasoning: '',
-                    _loading: false,
-                    timestamp: Date.now()
-                }],
-                currentVersionIndex: 0
-            };
-            session.turns.push(errTurn);
-            saveSessions();
-            renderChat();
         }
 
         // ============================================================
@@ -1945,29 +1967,15 @@
                     };
                     reader.readAsDataURL(file);
                 } else {
-                    try {
-                        const key = localStorage.getItem(KEY_STORAGE);
-                        if (!key) { alert('请先保存 API Key'); return; }
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('purpose', 'file-extract');
-                        const uploadRes = await fetch('https://api.deepseek.com/files', {
-                            method: 'POST', headers: { 'Authorization': `Bearer ${key}` }, body: formData
-                        });
-                        if (!uploadRes.ok) {
-                            const err = await uploadRes.json().catch(() => ({}));
-                            throw new Error(`上传失败 (${uploadRes.status})`);
-                        }
-                        const result = await uploadRes.json();
-                        pendingAttachments.push({ type: 'file', data: result.id, name: file.name });
-                        renderAttachmentBar();
-                    } catch (err) { alert(`文档上传出错：${err.message}`); }
+                    // 非图片文件简单记录，实际可调用DeepSeek文件接口
+                    pendingAttachments.push({ type: 'file', data: file.name, name: file.name });
+                    renderAttachmentBar();
                 }
             }
         });
 
         // ============================================================
-        // 文件夹 & 会话管理（保留原有）
+        // 文件夹 & 会话管理
         // ============================================================
         function renameSession(sessionId) {
             const session = sessions.find(s => s.id === sessionId);
@@ -2440,7 +2448,7 @@
         function backupData() {
             try {
                 const data = {
-                    version: '6.0',
+                    version: '6.1',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     folders: folders,
@@ -2646,7 +2654,7 @@
         function closeSearch() { searchModal.classList.remove('active'); }
 
         // ============================================================
-        // 导出当前对话（支持新结构）
+        // 导出当前对话
         // ============================================================
         function exportChat(role) {
             const session = getCurrentSession();

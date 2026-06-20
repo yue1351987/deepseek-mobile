@@ -5,8 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My DeepSeek</title>
     <style>
-        /* ========== 基础变量（暗色主题） ========== */
+        /* ========== 基础变量（默认日间） ========== */
         :root {
+            --bg-main: #f6f8fa;
+            --bg-surface: #ffffff;
+            --bg-input: #f0f2f5;
+            --bg-msg-user: #e0e7ff;
+            --bg-msg-ai: #f1f3f6;
+            --text-primary: #1e293b;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --border-light: #e2e8f0;
+            --shadow-soft: 0 2px 12px rgba(0,0,0,0.06);
+            --shadow-heavy: 0 8px 30px rgba(0,0,0,0.12);
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-red: #ef4444;
+            --font-size-msg: 15px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+            --highlight-bg: #fef08a;
+            --icon-color: #64748b;
+        }
+        body.dark {
             --bg-main: #0d1117;
             --bg-surface: #161b22;
             --bg-input: #1c2333;
@@ -21,11 +44,6 @@
             --accent-blue: #3b82f6;
             --accent-blue-hover: #2563eb;
             --accent-red: #ef4444;
-            --font-size-msg: 15px;
-            --radius-lg: 16px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-            --transition: 0.2s ease;
             --highlight-bg: #1f2937;
             --icon-color: var(--text-muted);
         }
@@ -97,7 +115,25 @@
         #newChatBtn .icon-svg { stroke: white; stroke-width: 2.5; }
         #newChatBtn:hover { background: var(--accent-blue-hover); transform: scale(1.02); }
 
-        /* ========== 附件条（保留但简化） ========== */
+        /* ========== 对话状态栏（含总Token） ========== */
+        #convStatusBar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 4px 16px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        #convStatusBar .status-item { display: flex; align-items: center; gap: 6px; }
+        #convStatusBar .status-item .value { font-weight: 500; color: var(--text-secondary); }
+        #convStatusBar .status-item .value.model { color: var(--accent-blue); }
+
+        /* ========== 附件条 ========== */
         #attachmentBar { display: none; gap: 6px; padding: 4px 16px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); flex-shrink: 0; flex-wrap: wrap; }
         #attachmentBar.show { display: flex; }
         .attach-tag { background: var(--bg-input); border-radius: 30px; padding: 2px 12px 2px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-light); color: var(--text-secondary); }
@@ -223,7 +259,15 @@
             color: white;
         }
 
-        /* ========== 输入区域（含Token统计） ========== */
+        /* AI 回复统计 */
+        .ai-stats {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            opacity: 0.8;
+        }
+
+        /* ========== 输入区域 ========== */
         #inputArea {
             background: var(--bg-surface);
             border-top: 1px solid var(--border-light);
@@ -233,20 +277,6 @@
             flex-direction: column;
             gap: 6px;
         }
-        #tokenStats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            font-size: 13px;
-            color: var(--text-muted);
-            padding: 4px 4px 0 4px;
-            border-bottom: 1px dashed var(--border-light);
-            margin-bottom: 4px;
-        }
-        #tokenStats .stat-item { display: flex; align-items: baseline; gap: 4px; }
-        #tokenStats .stat-item .label { font-weight: 400; }
-        #tokenStats .stat-item .value { font-weight: 500; color: var(--text-secondary); }
-
         #inputTopRow { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
         #inputTopLeft { display: flex; align-items: center; gap: 8px; }
         #inputTopLeft label { font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none; }
@@ -331,7 +361,22 @@
         #stopBtn:hover { opacity: 0.8; }
         #fileInput { display: none; }
 
-        /* ========== 底部状态栏（保留基础） ========== */
+        /* ----- 输入框下方 Token 统计（三行） ----- */
+        #tokenStats {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 4px 4px 0 4px;
+            border-top: 1px dashed var(--border-light);
+            margin-top: 4px;
+        }
+        #tokenStats .stat-row { display: flex; gap: 4px; }
+        #tokenStats .stat-row .label { font-weight: 400; }
+        #tokenStats .stat-row .value { font-weight: 500; color: var(--text-secondary); }
+
+        /* ========== 底部状态栏（保留） ========== */
         #statusBar {
             display: flex;
             justify-content: center;
@@ -344,7 +389,7 @@
             flex-shrink: 0;
         }
 
-        /* ========== 设置浮层面板（精简） ========== */
+        /* ========== 设置浮层面板 ========== */
         #settingsOverlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -551,7 +596,7 @@
 
         .divider { height: 1px; background: var(--border-light); margin: 4px 0; }
 
-        /* ========== 抽屉（去掉文件夹） ========== */
+        /* ========== 抽屉 ========== */
         #overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -718,7 +763,7 @@
         #favoriteList .fav-item .fav-meta .fav-remove:hover { color: var(--accent-red); }
         .fav-empty { color: var(--text-muted); text-align: center; padding: 30px 0; font-size: 14px; }
 
-        /* ========== 搜索模态框（保留） ========== */
+        /* ========== 搜索模态框 ========== */
         #searchModal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -793,7 +838,7 @@
             #titleArea { font-size: 14px; }
             #newChatBtn { width: 32px; height: 32px; }
             #settingsPanel { padding: 20px; }
-            #tokenStats { font-size: 12px; gap: 8px; }
+            #tokenStats { font-size: 11px; }
             .option-card { min-width: 60px; padding: 8px 10px; font-size: 12px; }
             .display-options .disp-card { min-width: 50px; padding: 6px 8px; font-size: 12px; }
             .backup-row .big-btn { font-size: 13px; padding: 10px 0; }
@@ -804,7 +849,6 @@
     </style>
 </head>
 <body>
-
     <!-- ====== 顶部导航 ====== -->
     <div id="topbar">
         <button id="menuBtn" aria-label="菜单">
@@ -821,9 +865,10 @@
         </div>
     </div>
 
-    <!-- 对话状态栏（精简） -->
-    <div id="convStatusBar" style="display:flex; align-items:center; justify-content:center; gap:24px; padding:4px 16px; background:var(--bg-surface); border-bottom:1px solid var(--border-light); font-size:12px; color:var(--text-muted); flex-shrink:0; flex-wrap:wrap;">
+    <!-- 对话状态栏（含总Token） -->
+    <div id="convStatusBar">
         <span class="status-item"><span>模式</span><span class="value model" id="convModelLabel">快速</span></span>
+        <span class="status-item"><span>总Token</span><span class="value" id="convTokensLabel">~0</span></span>
         <span class="status-item"><span>状态</span><span class="value" id="convStatusLabel">就绪</span></span>
     </div>
 
@@ -833,14 +878,8 @@
     <!-- 聊天区域 -->
     <div id="chatBox"></div>
 
-    <!-- 输入区域（含Token统计） -->
+    <!-- 输入区域 -->
     <div id="inputArea">
-        <!-- Token 统计 -->
-        <div id="tokenStats">
-            <span class="stat-item"><span class="label">本次正文</span><span class="value" id="currentInputStats">0 字，约 0 tokens</span></span>
-            <span class="stat-item"><span class="label">历史记忆</span><span class="value" id="historyStats">约 0 tokens（含摘要）</span></span>
-            <span class="stat-item"><span class="label">本轮输入共</span><span class="value" id="totalStats">约 0 tokens</span></span>
-        </div>
         <div id="inputTopRow">
             <div id="inputTopLeft">
                 <label for="deepSwitch">深度思考</label>
@@ -864,6 +903,12 @@
                 <svg class="icon-svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
             </button>
         </div>
+        <!-- 输入框下方 Token 统计（三行） -->
+        <div id="tokenStats">
+            <div class="stat-row"><span class="label">本次正文</span><span class="value" id="currentInputStats">0 字，约 0 tokens</span></div>
+            <div class="stat-row"><span class="label">历史记忆</span><span class="value" id="historyStats">约 0 tokens（含摘要）</span></div>
+            <div class="stat-row"><span class="label">本轮输入共</span><span class="value" id="totalStats">约 0 tokens</span></div>
+        </div>
     </div>
 
     <!-- 底部状态栏 -->
@@ -874,6 +919,10 @@
         <div id="settingsPanel">
             <div class="panel-header"><h2>设置</h2><button class="close-btn" id="closeSettingsBtn">✕</button></div>
             <div class="setting-group">
+                <div class="setting-item">
+                    <div class="setting-label">深色模式</div>
+                    <div class="toggle-row"><span class="toggle-label" id="darkLabel">关闭</span><div class="toggle-switch" id="settingsDarkToggle"><div class="toggle-slider"></div></div></div>
+                </div>
                 <div class="setting-item">
                     <div class="setting-label">模型模式</div>
                     <div class="setting-desc">快速模式响应更快，专家模式推理更深。</div>
@@ -914,7 +963,7 @@
                     <div class="display-options">
                         <div class="disp-card active" data-key="reasoning" id="dispReasoning">思考过程</div>
                         <div class="disp-card active" data-key="chars" id="dispChars">字符数</div>
-                        <div class="disp-card active" data-key="tokens" id="dispTokens">Token数</div>
+                        <div class="disp-card active" data-key="tokens" id="dispTokens">Token显示</div>
                     </div>
                 </div>
                 <div class="divider"></div>
@@ -963,7 +1012,7 @@
 
     <script>
         // ============================================================
-        // 数据层 - 双层版本结构（保留核心）
+        // 数据层 - 双层版本结构
         // ============================================================
         let sessions = [];
         let favorites = [];
@@ -981,6 +1030,7 @@
         let showTokens = true;
         let fontSize = 15;
         let memoryMode = 'full';
+        let darkMode = false; // 默认日间
 
         let pendingMode = 'flash';
         let pendingMemory = 'full';
@@ -995,6 +1045,7 @@
         const SHOW_TOKENS_KEY = 'deepseek_show_tokens';
         const FONT_SIZE_KEY = 'deepseek_font_size';
         const MEMORY_MODE_KEY = 'deepseek_memory_mode';
+        const DARK_MODE_KEY = 'deepseek_dark_mode';
 
         // DOM 引用
         const chatBox = document.getElementById('chatBox');
@@ -1034,6 +1085,7 @@
         const closeFavoriteBtn = document.getElementById('closeFavoriteBtn');
         const favoriteList = document.getElementById('favoriteList');
         const convModelLabel = document.getElementById('convModelLabel');
+        const convTokensLabel = document.getElementById('convTokensLabel');
         const convStatusLabel = document.getElementById('convStatusLabel');
 
         // Token 统计元素
@@ -1045,6 +1097,8 @@
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsOverlay = document.getElementById('settingsOverlay');
         const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const settingsDarkToggle = document.getElementById('settingsDarkToggle');
+        const darkLabel = document.getElementById('darkLabel');
         const settingsModeConfirm = document.getElementById('settingsModeConfirm');
         const settingsMemoryConfirm = document.getElementById('settingsMemoryConfirm');
         const settingsApiKey = document.getElementById('settingsApiKey');
@@ -1069,6 +1123,7 @@
             localStorage.setItem(STORAGE_FAVORITES_KEY, JSON.stringify(favorites));
             updateStorageInfo();
             updateTokenStats();
+            updateTotalToken();
         }
 
         function getCurrentSession() { return sessions.find(s => s.id === currentId) || sessions[0]; }
@@ -1076,9 +1131,15 @@
         function estimateTokens(text) { if (!text) return 0; return Math.ceil(text.length / 1.8); }
 
         // ============================================================
-        // Token 统计（三行）
+        // Token 统计（三行 + 状态栏总Token）
         // ============================================================
         function updateTokenStats() {
+            if (!showTokens) {
+                document.getElementById('tokenStats').style.display = 'none';
+                return;
+            }
+            document.getElementById('tokenStats').style.display = 'flex';
+
             const session = getCurrentSession();
             if (!session) {
                 currentInputStats.textContent = '0 字，约 0 tokens';
@@ -1086,7 +1147,6 @@
                 totalStats.textContent = '约 0 tokens';
                 return;
             }
-            // 历史记忆：所有之前回合的所有版本内容（用户+AI+推理）
             let historyTokens = 0;
             session.turns.forEach(turn => {
                 turn.inputVersions.forEach(iv => {
@@ -1097,7 +1157,6 @@
                     });
                 });
             });
-            // 当前输入正文（输入框内容）
             const currentText = promptInput.value || '';
             const currentLen = currentText.length;
             const currentTokens = estimateTokens(currentText);
@@ -1106,6 +1165,36 @@
             currentInputStats.textContent = `${currentLen} 字，约 ${currentTokens} tokens`;
             historyStats.textContent = `约 ${historyTokens} tokens（含摘要）`;
             totalStats.textContent = `约 ${total} tokens`;
+        }
+
+        function updateTotalToken() {
+            if (!showTokens) {
+                convTokensLabel.textContent = '--';
+                return;
+            }
+            const session = getCurrentSession();
+            if (!session) { convTokensLabel.textContent = '~0'; return; }
+            let total = 0;
+            session.turns.forEach(turn => {
+                turn.inputVersions.forEach(iv => {
+                    if (iv.content) total += estimateTokens(iv.content);
+                    iv.outputVersions.forEach(ov => {
+                        if (ov.content) total += estimateTokens(ov.content);
+                        if (ov.reasoning) total += estimateTokens(ov.reasoning);
+                    });
+                });
+            });
+            convTokensLabel.textContent = `~${total}`;
+        }
+
+        // ============================================================
+        // 生成 AI 回复统计字符串
+        // ============================================================
+        function getAIStats(reasoning, content) {
+            const reasoningLen = reasoning ? reasoning.length : 0;
+            const contentLen = content ? content.length : 0;
+            const totalTokens = estimateTokens(content) + estimateTokens(reasoning);
+            return `思考 ${reasoningLen} 字，AI 回复正文 ${contentLen} 字，约 ${totalTokens} tokens`;
         }
 
         // ============================================================
@@ -1133,7 +1222,7 @@
         }
 
         // ============================================================
-        // 收藏功能
+        // 收藏功能（同前）
         // ============================================================
         function toggleFavoriteMsg(sessionId, turnIdx, inputIdx) {
             const session = sessions.find(s => s.id === sessionId);
@@ -1253,6 +1342,20 @@
             const savedKey = localStorage.getItem(KEY_STORAGE);
             if (savedKey) { currentKey = savedKey; settingsApiKey.value = savedKey; }
 
+            // 深色模式
+            const dark = localStorage.getItem(DARK_MODE_KEY);
+            if (dark === 'true') {
+                darkMode = true;
+                document.body.classList.add('dark');
+                settingsDarkToggle.classList.add('active');
+                darkLabel.textContent = '开启';
+            } else {
+                darkMode = false;
+                document.body.classList.remove('dark');
+                settingsDarkToggle.classList.remove('active');
+                darkLabel.textContent = '关闭';
+            }
+
             const savedMode = localStorage.getItem(MODE_KEY);
             if (savedMode === 'pro' || savedMode === 'flash') mode = savedMode;
             pendingMode = mode;
@@ -1330,6 +1433,7 @@
             updateStorageInfo();
             updateConvStatus();
             updateTokenStats();
+            updateTotalToken();
             document.getElementById('sendBtn').onclick = sendMessage;
         }
 
@@ -1371,7 +1475,10 @@
 
         function updateShowTokensUI() {
             dispTokens.classList.toggle('active', showTokens);
+            updateTokenStats();
+            updateTotalToken();
             updateConvStatus();
+            renderChat(); // 刷新AI统计显示
         }
 
         function updateConvStatus() {
@@ -1386,7 +1493,7 @@
         }
 
         // ============================================================
-        // 渲染聊天 - 双层版本
+        // 渲染聊天 - 双层版本（含AI统计）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1472,6 +1579,14 @@
                         assistantMsgDiv.textContent = ov.content;
                         assistantWrap.appendChild(assistantMsgDiv);
 
+                        // AI 统计（仅当 showTokens 开启）
+                        if (showTokens) {
+                            const statsDiv = document.createElement('div');
+                            statsDiv.className = 'ai-stats';
+                            statsDiv.textContent = getAIStats(ov.reasoning, ov.content);
+                            assistantWrap.appendChild(statsDiv);
+                        }
+
                         const assistantActions = document.createElement('div');
                         assistantActions.className = 'msg-actions';
                         if (iv.outputVersions.length > 1) {
@@ -1536,12 +1651,12 @@
             }
             chatBox.scrollTop = chatBox.scrollHeight;
             renderDrawer();
-            updateTokenStats();
+            updateTotalToken();
             updateConvStatus();
         }
 
         // ============================================================
-        // 版本控制组件
+        // 版本控制组件（同前）
         // ============================================================
         function createInputVersionControl(turn, turnIdx) {
             const container = document.createElement('span');
@@ -1595,7 +1710,7 @@
         }
 
         // ============================================================
-        // 切换版本
+        // 切换版本（同前）
         // ============================================================
         function switchInputVersion(turnIdx, direction) {
             const session = getCurrentSession();
@@ -1769,7 +1884,7 @@
         }
 
         // ============================================================
-        // 执行流式请求（带重试机制）
+        // 执行流式请求（带重试）
         // ============================================================
         async function performStreamRequest(session, turnIdx, inputVersion, outputVersion, appendMode) {
             const key = localStorage.getItem(KEY_STORAGE);
@@ -1816,7 +1931,6 @@
                 requestBody.reasoning_effort = 'low';
             }
 
-            // 重试配置
             const maxRetries = 3;
             let retryCount = 0;
             let success = false;
@@ -1926,15 +2040,12 @@
                         renderChat();
                         statusShort.textContent = '⏹ 已停止 (可继续生成)';
                         setTimeout(() => { if (statusShort.textContent === '⏹ 已停止 (可继续生成)') statusShort.textContent = '就绪'; updateConvStatus(); }, 3000);
-                        // 停止重试
                         break;
                     } else {
                         retryCount++;
                         if (retryCount < maxRetries) {
-                            // 等待1秒后重试
                             await new Promise(resolve => setTimeout(resolve, 1000));
                         } else {
-                            // 重试次数用完，报错
                             outputVersion._loading = false;
                             outputVersion.content = `❌ 失败: ${error.message}`;
                             outputVersion.interrupted = false;
@@ -1949,7 +2060,6 @@
                         // 正常结束或停止
                     }
                     if (!success && lastError?.name !== 'AbortError') {
-                        // 如果失败且不是停止，确保清理状态
                         isStreaming = false;
                         sendBtn.disabled = false;
                         stopBtn.style.display = 'none';
@@ -1960,7 +2070,6 @@
                 }
             }
 
-            // 最终清理
             if (!success && lastError?.name !== 'AbortError') {
                 isStreaming = false;
                 sendBtn.disabled = false;
@@ -2185,7 +2294,6 @@
             function createSessionItem(session) {
                 const div = document.createElement('div');
                 div.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
-                div.draggable = false; // 无文件夹，无需拖拽
                 div.dataset.sessionId = session.id;
 
                 const nameSpan = document.createElement('span');
@@ -2321,6 +2429,15 @@
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });
         settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('active'); });
 
+        // 深色模式切换
+        settingsDarkToggle.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark');
+            settingsDarkToggle.classList.toggle('active', isDark);
+            darkLabel.textContent = isDark ? '开启' : '关闭';
+            darkMode = isDark;
+            localStorage.setItem(DARK_MODE_KEY, String(isDark));
+        });
+
         modeOptions.addEventListener('click', (e) => {
             const card = e.target.closest('.option-card');
             if (!card) return;
@@ -2420,7 +2537,12 @@
             showTokens = !showTokens;
             localStorage.setItem(SHOW_TOKENS_KEY, String(showTokens));
             updateShowTokensUI();
-            updateConvStatus();
+            // 立即刷新显示
+            updateTokenStats();
+            updateTotalToken();
+            renderChat();
+            statusShort.textContent = showTokens ? 'Token显示已开启' : 'Token显示已关闭';
+            setTimeout(() => { if (statusShort.textContent.includes('Token')) statusShort.textContent = '就绪'; updateConvStatus(); }, 1500);
         });
 
         // ============================================================
@@ -2429,7 +2551,7 @@
         function backupData() {
             try {
                 const data = {
-                    version: '7.4',
+                    version: '7.5',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     favorites: favorites,
@@ -2440,7 +2562,8 @@
                     showChars: showChars,
                     showTokens: showTokens,
                     fontSize: fontSize,
-                    memoryMode: memoryMode
+                    memoryMode: memoryMode,
+                    darkMode: darkMode
                 };
                 const json = JSON.stringify(data, null, 2);
                 const blob = new Blob([json], { type: 'application/json' });
@@ -2504,6 +2627,19 @@
                         pendingMemory = memoryMode;
                         localStorage.setItem(MEMORY_MODE_KEY, memoryMode);
                         updateMemoryUI();
+                    }
+                    if (data.darkMode !== undefined) {
+                        darkMode = data.darkMode;
+                        if (darkMode) {
+                            document.body.classList.add('dark');
+                            settingsDarkToggle.classList.add('active');
+                            darkLabel.textContent = '开启';
+                        } else {
+                            document.body.classList.remove('dark');
+                            settingsDarkToggle.classList.remove('active');
+                            darkLabel.textContent = '关闭';
+                        }
+                        localStorage.setItem(DARK_MODE_KEY, String(darkMode));
                     }
                     const active = sessions.find(s => s.active) || sessions[0];
                     if (active) { currentId = active.id; }

@@ -134,10 +134,36 @@
         #convStatusBar .status-item .value.model { color: var(--accent-blue); }
 
         /* ========== 附件条 ========== */
-        #attachmentBar { display: none; gap: 6px; padding: 4px 16px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); flex-shrink: 0; flex-wrap: wrap; }
+        #attachmentBar {
+            display: none;
+            gap: 6px;
+            padding: 4px 16px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
         #attachmentBar.show { display: flex; }
-        .attach-tag { background: var(--bg-input); border-radius: 30px; padding: 2px 12px 2px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-light); color: var(--text-secondary); }
-        .attach-tag .remove-attach { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 0 2px; transition: color 0.2s; }
+        .attach-tag {
+            background: var(--bg-input);
+            border-radius: 30px;
+            padding: 2px 12px 2px 16px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+        .attach-tag .remove-attach {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0 2px;
+            transition: color 0.2s;
+        }
         .attach-tag .remove-attach:active { color: var(--accent-red); }
 
         /* ========== 聊天区域 ========== */
@@ -265,9 +291,11 @@
             color: var(--text-muted);
             margin-top: 2px;
             opacity: 0.8;
+            line-height: 1.6;
         }
+        .msg-stats .stat-row { display: block; }
 
-        /* ========== 输入区域（移除了Token三行） ========== */
+        /* ========== 输入区域 ========== */
         #inputArea {
             background: var(--bg-surface);
             border-top: 1px solid var(--border-light);
@@ -862,7 +890,7 @@
     <!-- 聊天区域 -->
     <div id="chatBox"></div>
 
-    <!-- 输入区域（已移除Token三行） -->
+    <!-- 输入区域 -->
     <div id="inputArea">
         <div id="inputTopRow">
             <div id="inputTopLeft">
@@ -1123,19 +1151,41 @@
             convTokensLabel.textContent = `~${total}`;
         }
 
-        // 生成 AI 回复统计字符串
+        // 计算指定 turn 之前的历史 Token（不含当前 turn）
+        function getHistoryTokens(session, turnIdx) {
+            let total = 0;
+            for (let i = 0; i < turnIdx; i++) {
+                const turn = session.turns[i];
+                turn.inputVersions.forEach(iv => {
+                    if (iv.content) total += estimateTokens(iv.content);
+                    iv.outputVersions.forEach(ov => {
+                        if (ov.content) total += estimateTokens(ov.content);
+                        if (ov.reasoning) total += estimateTokens(ov.reasoning);
+                    });
+                });
+            }
+            return total;
+        }
+
+        // 生成用户消息统计（三行）
+        function getUserStats(session, turnIdx, content) {
+            const historyTokens = getHistoryTokens(session, turnIdx);
+            const currentTokens = estimateTokens(content);
+            const total = historyTokens + currentTokens;
+            const len = content ? content.length : 0;
+            return {
+                current: `本次正文 ${len} 字，约 ${currentTokens} tokens`,
+                history: `历史记忆约 ${historyTokens} tokens（含摘要）`,
+                total: `本轮输入共约 ${total} tokens`
+            };
+        }
+
+        // 生成 AI 回复统计
         function getAIStats(reasoning, content) {
             const reasoningLen = reasoning ? reasoning.length : 0;
             const contentLen = content ? content.length : 0;
             const totalTokens = estimateTokens(content) + estimateTokens(reasoning);
             return `思考 ${reasoningLen} 字，AI 回复正文 ${contentLen} 字，约 ${totalTokens} tokens`;
-        }
-
-        // 生成用户消息统计字符串
-        function getUserStats(content) {
-            const len = content ? content.length : 0;
-            const tokens = estimateTokens(content);
-            return `本次正文 ${len} 字，约 ${tokens} tokens`;
         }
 
         // ============================================================
@@ -1163,7 +1213,7 @@
         }
 
         // ============================================================
-        // 收藏功能（同前，略）
+        // 收藏功能（略）
         // ============================================================
         function toggleFavoriteMsg(sessionId, turnIdx, inputIdx) {
             const session = sessions.find(s => s.id === sessionId);
@@ -1283,7 +1333,6 @@
             const savedKey = localStorage.getItem(KEY_STORAGE);
             if (savedKey) { currentKey = savedKey; settingsApiKey.value = savedKey; }
 
-            // 深色模式
             const dark = localStorage.getItem(DARK_MODE_KEY);
             if (dark === 'true') {
                 darkMode = true;
@@ -1417,7 +1466,7 @@
             dispTokens.classList.toggle('active', showTokens);
             updateTotalToken();
             updateConvStatus();
-            renderChat(); // 刷新消息统计显示
+            renderChat();
         }
 
         function updateConvStatus() {
@@ -1432,7 +1481,7 @@
         }
 
         // ============================================================
-        // 渲染聊天 - 双层版本（含用户和AI统计）
+        // 渲染聊天 - 双层版本（用户消息三行统计）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1466,11 +1515,16 @@
                     userMsgDiv.textContent = iv.content || '(空消息)';
                     userWrap.appendChild(userMsgDiv);
 
-                    // 用户统计（仅当 showTokens 开启且内容非空）
+                    // 用户统计（三行）
                     if (showTokens && iv.content) {
+                        const stats = getUserStats(session, turnIdx, iv.content);
                         const statsDiv = document.createElement('div');
                         statsDiv.className = 'msg-stats';
-                        statsDiv.textContent = getUserStats(iv.content);
+                        statsDiv.innerHTML = `
+                            <span class="stat-row">${stats.current}</span>
+                            <span class="stat-row">${stats.history}</span>
+                            <span class="stat-row">${stats.total}</span>
+                        `;
                         userWrap.appendChild(statsDiv);
                     }
 
@@ -1527,7 +1581,7 @@
                         assistantMsgDiv.textContent = ov.content;
                         assistantWrap.appendChild(assistantMsgDiv);
 
-                        // AI 统计（仅当 showTokens 开启）
+                        // AI 统计
                         if (showTokens) {
                             const statsDiv = document.createElement('div');
                             statsDiv.className = 'msg-stats';
@@ -1604,7 +1658,7 @@
         }
 
         // ============================================================
-        // 版本控制组件（同前）
+        // 版本控制组件（略）
         // ============================================================
         function createInputVersionControl(turn, turnIdx) {
             const container = document.createElement('span');
@@ -1657,9 +1711,6 @@
             return container;
         }
 
-        // ============================================================
-        // 切换版本（同前）
-        // ============================================================
         function switchInputVersion(turnIdx, direction) {
             const session = getCurrentSession();
             if (!session) return;
@@ -1694,7 +1745,7 @@
         }
 
         // ============================================================
-        // 编辑用户消息（新增输入版本）
+        // 编辑用户消息
         // ============================================================
         function editUserMessage(turnIdx) {
             const session = getCurrentSession();
@@ -1721,7 +1772,7 @@
         }
 
         // ============================================================
-        // 重新生成 AI 回复（在当前输入版本下新增输出版本）
+        // 重新生成和继续生成
         // ============================================================
         async function regenerateMessage(turnIdx) {
             const session = getCurrentSession();
@@ -1751,9 +1802,6 @@
             await performStreamRequest(session, turnIdx, iv, newOv, false);
         }
 
-        // ============================================================
-        // 继续生成（追加内容，不新增版本）
-        // ============================================================
         async function continueGeneration(turnIdx) {
             if (isStreaming) return;
             const session = getCurrentSession();
@@ -1777,7 +1825,7 @@
         }
 
         // ============================================================
-        // 增量更新流式消息
+        // 流式更新
         // ============================================================
         function updateStreamingMessage(turnIdx, fullContent, reasoning) {
             const turnWrappers = chatBox.querySelectorAll('.turn-wrapper');
@@ -2036,7 +2084,7 @@
         }
 
         // ============================================================
-        // 发送新消息（创建新回合）
+        // 发送新消息（含附件处理）
         // ============================================================
         async function sendMessage() {
             if (isStreaming) {
@@ -2066,7 +2114,21 @@
                 }
             }
 
-            const userContent = text || '(文件上传)';
+            // 处理附件内容
+            let attachmentText = '';
+            for (const att of pendingAttachments) {
+                if (att.type === 'txt') {
+                    attachmentText += `\n\n[文件内容：${att.name}]\n${att.content}\n[文件结束]`;
+                } else {
+                    attachmentText += `\n\n[文件：${att.name}]（该文件类型暂不支持内容读取，仅作提示）`;
+                }
+            }
+
+            const userContent = (text + attachmentText).trim() || '(文件上传)';
+
+            // 清空附件栏
+            pendingAttachments = [];
+            renderAttachmentBar();
 
             const newTurn = {
                 inputVersions: [{
@@ -2084,8 +2146,6 @@
 
             promptInput.value = '';
             promptInput.style.height = 'auto';
-            pendingAttachments = [];
-            renderAttachmentBar();
 
             await regenerateMessage(turnIdx);
         }
@@ -2122,7 +2182,7 @@
         });
 
         // ============================================================
-        // 附件管理
+        // 附件管理（支持 txt 读取）
         // ============================================================
         function renderAttachmentBar() {
             attachmentBar.innerHTML = '';
@@ -2131,7 +2191,7 @@
             pendingAttachments.forEach((att, index) => {
                 const tag = document.createElement('span');
                 tag.className = 'attach-tag';
-                const icon = att.type === 'image' ? '🖼️' : '📄';
+                const icon = att.type === 'txt' ? '📄' : '📎';
                 tag.innerHTML = `${icon} ${att.name}`;
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-attach';
@@ -2151,19 +2211,28 @@
             if (!files.length) return;
             fileInput.value = '';
             for (const file of files) {
-                const isImage = file.type.startsWith('image/');
-                if (isImage) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        pendingAttachments.push({ type: 'image', data: ev.target.result, name: file.name });
-                        renderAttachmentBar();
-                    };
-                    reader.readAsDataURL(file);
+                const isTxt = file.type === 'text/plain' || file.name.endsWith('.txt');
+                if (isTxt) {
+                    try {
+                        const content = await file.text();
+                        pendingAttachments.push({
+                            type: 'txt',
+                            name: file.name,
+                            content: content
+                        });
+                    } catch (err) {
+                        alert(`读取文件 ${file.name} 失败：${err.message}`);
+                    }
                 } else {
-                    pendingAttachments.push({ type: 'file', data: file.name, name: file.name });
-                    renderAttachmentBar();
+                    // 其他文件仅占位
+                    pendingAttachments.push({
+                        type: 'other',
+                        name: file.name,
+                        content: null
+                    });
                 }
             }
+            renderAttachmentBar();
         });
 
         // ============================================================
@@ -2483,7 +2552,6 @@
             showTokens = !showTokens;
             localStorage.setItem(SHOW_TOKENS_KEY, String(showTokens));
             updateShowTokensUI();
-            // 立即刷新
             updateTotalToken();
             renderChat();
             statusShort.textContent = showTokens ? 'Token显示已开启' : 'Token显示已关闭';
@@ -2496,7 +2564,7 @@
         function backupData() {
             try {
                 const data = {
-                    version: '7.5',
+                    version: '7.6',
                     exportedAt: new Date().toISOString(),
                     sessions: sessions,
                     favorites: favorites,

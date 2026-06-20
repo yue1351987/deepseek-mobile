@@ -259,15 +259,15 @@
             color: white;
         }
 
-        /* AI 回复统计 */
-        .ai-stats {
+        /* AI 和用户消息的统计 */
+        .msg-stats {
             font-size: 12px;
             color: var(--text-muted);
             margin-top: 2px;
             opacity: 0.8;
         }
 
-        /* ========== 输入区域 ========== */
+        /* ========== 输入区域（移除了Token三行） ========== */
         #inputArea {
             background: var(--bg-surface);
             border-top: 1px solid var(--border-light);
@@ -361,22 +361,7 @@
         #stopBtn:hover { opacity: 0.8; }
         #fileInput { display: none; }
 
-        /* ----- 输入框下方 Token 统计（三行） ----- */
-        #tokenStats {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            font-size: 12px;
-            color: var(--text-muted);
-            padding: 4px 4px 0 4px;
-            border-top: 1px dashed var(--border-light);
-            margin-top: 4px;
-        }
-        #tokenStats .stat-row { display: flex; gap: 4px; }
-        #tokenStats .stat-row .label { font-weight: 400; }
-        #tokenStats .stat-row .value { font-weight: 500; color: var(--text-secondary); }
-
-        /* ========== 底部状态栏（保留） ========== */
+        /* ========== 底部状态栏 ========== */
         #statusBar {
             display: flex;
             justify-content: center;
@@ -838,7 +823,6 @@
             #titleArea { font-size: 14px; }
             #newChatBtn { width: 32px; height: 32px; }
             #settingsPanel { padding: 20px; }
-            #tokenStats { font-size: 11px; }
             .option-card { min-width: 60px; padding: 8px 10px; font-size: 12px; }
             .display-options .disp-card { min-width: 50px; padding: 6px 8px; font-size: 12px; }
             .backup-row .big-btn { font-size: 13px; padding: 10px 0; }
@@ -878,7 +862,7 @@
     <!-- 聊天区域 -->
     <div id="chatBox"></div>
 
-    <!-- 输入区域 -->
+    <!-- 输入区域（已移除Token三行） -->
     <div id="inputArea">
         <div id="inputTopRow">
             <div id="inputTopLeft">
@@ -902,12 +886,6 @@
             <button id="stopBtn" aria-label="停止">
                 <svg class="icon-svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
             </button>
-        </div>
-        <!-- 输入框下方 Token 统计（三行） -->
-        <div id="tokenStats">
-            <div class="stat-row"><span class="label">本次正文</span><span class="value" id="currentInputStats">0 字，约 0 tokens</span></div>
-            <div class="stat-row"><span class="label">历史记忆</span><span class="value" id="historyStats">约 0 tokens（含摘要）</span></div>
-            <div class="stat-row"><span class="label">本轮输入共</span><span class="value" id="totalStats">约 0 tokens</span></div>
         </div>
     </div>
 
@@ -1030,7 +1008,7 @@
         let showTokens = true;
         let fontSize = 15;
         let memoryMode = 'full';
-        let darkMode = false; // 默认日间
+        let darkMode = false;
 
         let pendingMode = 'flash';
         let pendingMemory = 'full';
@@ -1088,11 +1066,6 @@
         const convTokensLabel = document.getElementById('convTokensLabel');
         const convStatusLabel = document.getElementById('convStatusLabel');
 
-        // Token 统计元素
-        const currentInputStats = document.getElementById('currentInputStats');
-        const historyStats = document.getElementById('historyStats');
-        const totalStats = document.getElementById('totalStats');
-
         // 设置面板
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsOverlay = document.getElementById('settingsOverlay');
@@ -1122,7 +1095,6 @@
             localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(sessions));
             localStorage.setItem(STORAGE_FAVORITES_KEY, JSON.stringify(favorites));
             updateStorageInfo();
-            updateTokenStats();
             updateTotalToken();
         }
 
@@ -1130,43 +1102,7 @@
 
         function estimateTokens(text) { if (!text) return 0; return Math.ceil(text.length / 1.8); }
 
-        // ============================================================
-        // Token 统计（三行 + 状态栏总Token）
-        // ============================================================
-        function updateTokenStats() {
-            if (!showTokens) {
-                document.getElementById('tokenStats').style.display = 'none';
-                return;
-            }
-            document.getElementById('tokenStats').style.display = 'flex';
-
-            const session = getCurrentSession();
-            if (!session) {
-                currentInputStats.textContent = '0 字，约 0 tokens';
-                historyStats.textContent = '约 0 tokens（含摘要）';
-                totalStats.textContent = '约 0 tokens';
-                return;
-            }
-            let historyTokens = 0;
-            session.turns.forEach(turn => {
-                turn.inputVersions.forEach(iv => {
-                    if (iv.content) historyTokens += estimateTokens(iv.content);
-                    iv.outputVersions.forEach(ov => {
-                        if (ov.content) historyTokens += estimateTokens(ov.content);
-                        if (ov.reasoning) historyTokens += estimateTokens(ov.reasoning);
-                    });
-                });
-            });
-            const currentText = promptInput.value || '';
-            const currentLen = currentText.length;
-            const currentTokens = estimateTokens(currentText);
-            const total = historyTokens + currentTokens;
-
-            currentInputStats.textContent = `${currentLen} 字，约 ${currentTokens} tokens`;
-            historyStats.textContent = `约 ${historyTokens} tokens（含摘要）`;
-            totalStats.textContent = `约 ${total} tokens`;
-        }
-
+        // 状态栏总Token
         function updateTotalToken() {
             if (!showTokens) {
                 convTokensLabel.textContent = '--';
@@ -1187,14 +1123,19 @@
             convTokensLabel.textContent = `~${total}`;
         }
 
-        // ============================================================
         // 生成 AI 回复统计字符串
-        // ============================================================
         function getAIStats(reasoning, content) {
             const reasoningLen = reasoning ? reasoning.length : 0;
             const contentLen = content ? content.length : 0;
             const totalTokens = estimateTokens(content) + estimateTokens(reasoning);
             return `思考 ${reasoningLen} 字，AI 回复正文 ${contentLen} 字，约 ${totalTokens} tokens`;
+        }
+
+        // 生成用户消息统计字符串
+        function getUserStats(content) {
+            const len = content ? content.length : 0;
+            const tokens = estimateTokens(content);
+            return `本次正文 ${len} 字，约 ${tokens} tokens`;
         }
 
         // ============================================================
@@ -1222,7 +1163,7 @@
         }
 
         // ============================================================
-        // 收藏功能（同前）
+        // 收藏功能（同前，略）
         // ============================================================
         function toggleFavoriteMsg(sessionId, turnIdx, inputIdx) {
             const session = sessions.find(s => s.id === sessionId);
@@ -1432,7 +1373,6 @@
             saveSessions();
             updateStorageInfo();
             updateConvStatus();
-            updateTokenStats();
             updateTotalToken();
             document.getElementById('sendBtn').onclick = sendMessage;
         }
@@ -1475,10 +1415,9 @@
 
         function updateShowTokensUI() {
             dispTokens.classList.toggle('active', showTokens);
-            updateTokenStats();
             updateTotalToken();
             updateConvStatus();
-            renderChat(); // 刷新AI统计显示
+            renderChat(); // 刷新消息统计显示
         }
 
         function updateConvStatus() {
@@ -1493,7 +1432,7 @@
         }
 
         // ============================================================
-        // 渲染聊天 - 双层版本（含AI统计）
+        // 渲染聊天 - 双层版本（含用户和AI统计）
         // ============================================================
         function renderChat() {
             const session = getCurrentSession();
@@ -1526,6 +1465,15 @@
                     userMsgDiv.className = 'msg';
                     userMsgDiv.textContent = iv.content || '(空消息)';
                     userWrap.appendChild(userMsgDiv);
+
+                    // 用户统计（仅当 showTokens 开启且内容非空）
+                    if (showTokens && iv.content) {
+                        const statsDiv = document.createElement('div');
+                        statsDiv.className = 'msg-stats';
+                        statsDiv.textContent = getUserStats(iv.content);
+                        userWrap.appendChild(statsDiv);
+                    }
+
                     turnWrapper.appendChild(userWrap);
 
                     // --- 用户消息操作栏 ---
@@ -1582,7 +1530,7 @@
                         // AI 统计（仅当 showTokens 开启）
                         if (showTokens) {
                             const statsDiv = document.createElement('div');
-                            statsDiv.className = 'ai-stats';
+                            statsDiv.className = 'msg-stats';
                             statsDiv.textContent = getAIStats(ov.reasoning, ov.content);
                             assistantWrap.appendChild(statsDiv);
                         }
@@ -2398,7 +2346,6 @@
             renderChat();
             closeDrawer();
             promptInput.focus();
-            updateTokenStats();
             updateConvStatus();
         }
 
@@ -2429,7 +2376,6 @@
         closeSettingsBtn.addEventListener('click', () => { settingsOverlay.classList.remove('active'); });
         settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('active'); });
 
-        // 深色模式切换
         settingsDarkToggle.addEventListener('click', () => {
             const isDark = document.body.classList.toggle('dark');
             settingsDarkToggle.classList.toggle('active', isDark);
@@ -2537,8 +2483,7 @@
             showTokens = !showTokens;
             localStorage.setItem(SHOW_TOKENS_KEY, String(showTokens));
             updateShowTokensUI();
-            // 立即刷新显示
-            updateTokenStats();
+            // 立即刷新
             updateTotalToken();
             renderChat();
             statusShort.textContent = showTokens ? 'Token显示已开启' : 'Token显示已关闭';
@@ -2802,7 +2747,6 @@
             } else {
                 statusChars.style.display = 'none';
             }
-            updateTokenStats(); // 同时更新三行统计
         }
 
         promptInput.addEventListener('input', function() {
